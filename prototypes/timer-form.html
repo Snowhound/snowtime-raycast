@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timer Form · Snowtime for Raycast</title>
+    <link rel="stylesheet" href="raycast.css" />
+    <script src="fixtures.js"></script>
+    <script src="raycast.js"></script>
+  </head>
+  <body>
+    <script>
+      // The timer form (task 001, subtask 02). Start Timer's list (start-timer.html) pushes it
+      // with what was typed and the remembered project, or prefilled from a suggestion;
+      // Continue Timer opens it prefilled from the running entry, or the newest one.
+      const { orgs, projects, running, entries, format } = Fixtures;
+
+      const projectIcon = (p) => ({ icon: "CircleFilled", iconColor: p?.color ?? "var(--muted)" });
+      const noProject = { title: "No project", icon: "Circle", iconColor: "var(--muted)" };
+      const northwindProjects = [projects.internal, projects.mobile, projects.website];
+      const options = (list) => [noProject, ...list.map((p) => ({ title: p.name, ...projectIcon(p) }))];
+
+      const TICKET_INFO = "Left empty, a ticket key in the description, such as ABC-123, becomes the ticket.";
+      const PROJECT_INFO = "Remembered for the next timer. Changing the organization clears it.";
+      // The project of the last timer started in this organization.
+      const remembered = projects.website;
+
+      // The fields in order. `org` is null with one organization, which hides its dropdown.
+      function fields({
+        description,
+        ticket,
+        project,
+        org = orgs.northwind,
+        projectList = northwindProjects,
+        ...rest
+      }) {
+        return [
+          ...(rest.intro ? [{ type: "description", text: rest.intro }] : []),
+          {
+            type: "textfield",
+            title: "Description",
+            placeholder: "What are you working on?",
+            value: description,
+            focused: rest.focus !== "none",
+          },
+          {
+            type: "textfield",
+            title: "Ticket",
+            placeholder: "ABC-123",
+            value: ticket,
+            error: rest.ticketError,
+            info: TICKET_INFO,
+            infoOpen: rest.ticketInfoOpen,
+          },
+          {
+            type: "dropdown",
+            title: "Project",
+            value: project?.name ?? "No project",
+            ...(project ? projectIcon(project) : { icon: noProject.icon, iconColor: noProject.iconColor }),
+            info: rest.projectInfo ?? PROJECT_INFO,
+            infoOpen: rest.projectInfoOpen,
+            open: rest.projectsOpen,
+            options: options(projectList),
+          },
+          ...(org
+            ? [
+                { type: "separator" },
+                {
+                  type: "dropdown",
+                  title: "Organization",
+                  value: org.name,
+                  icon: "Building",
+                  info: "Remembered for every command.",
+                },
+              ]
+            : []),
+        ];
+      }
+
+      const startActions = (next = "Started") => [
+        { title: "Start Timer", icon: "Play", goto: next },
+        { title: "Open Snowtime", icon: "Globe", shortcut: "cmd+o" },
+      ];
+
+      function start(values = {}, more = {}) {
+        return {
+          type: "form",
+          navigationTitle: "Start Timer",
+          back: true,
+          fields: fields({ project: remembered, ...values }),
+          actions: startActions(more.next),
+          ...more,
+        };
+      }
+
+      const filled = { description: "Inbox triage", ticket: "OPS-7" };
+
+      function failure(message, action) {
+        return {
+          style: "failure",
+          title: "Couldn't start timer",
+          message,
+          primaryAction: action && { title: action },
+        };
+      }
+
+      const newest = entries.find((e) => e.stoppedAt);
+
+      function continueFrom(entry, intro) {
+        return {
+          type: "form",
+          navigationTitle: "Continue Timer",
+          fields: fields({
+            description: entry?.description,
+            ticket: entry?.ticket,
+            project: entry ? entry.project : remembered,
+            intro,
+          }),
+          actions: startActions(entry === running ? "Continued, splitting the running entry" : "Started"),
+        };
+      }
+
+      Raycast.prototype({
+        title: "Timer form",
+        notes: [
+          "One form: Start Timer's list pushes it (← goes back to the list), and Continue Timer opens it prefilled. ⌘↵ starts the timer, as Raycast submits forms; the form closes and a HUD confirms.",
+          "The project of the last timer stays selected for the next one, in both commands, until the organization changes.",
+          "The Organization field shows only to people in more than one organization. Changing it reloads the projects and clears the remembered project.",
+          "A ticket left empty is taken from the description on submit, as Snowtime does; the ⓘ beside Ticket says so. A wrong key is caught in the form with the API's own rule.",
+        ],
+        states: {
+          "Start: loading": () => start({ project: undefined }, { isLoading: true }),
+          "Start: one organization": () => start({ org: null }),
+          "Start: several organizations": () => start({}),
+          "Start: first timer, nothing remembered": () => start({ project: undefined }),
+          "Start: choosing a project": () => start({ ...filled, projectsOpen: true, focus: "none" }),
+          "Start: the project note": () => start({ ...filled, projectInfoOpen: true, focus: "none" }),
+          "Start: organization changed": () =>
+            start(
+              { description: "Inbox triage", org: orgs.harbor, project: undefined, projectList: [] },
+              { isLoading: true },
+            ),
+          "Start: no projects": () =>
+            start({
+              description: "Inbox triage",
+              org: orgs.harbor,
+              project: undefined,
+              projectList: [],
+              projectInfo: "Harbor Consulting has no projects you can log time on.",
+              projectInfoOpen: true,
+              focus: "none",
+            }),
+          "Start: filled in": () => start(filled),
+          "Start: ticket in the description": () =>
+            start(
+              { description: "OPS-7 Inbox triage", ticketInfoOpen: true, focus: "none" },
+              { next: "Started, ticket from the description" },
+            ),
+          "Start: invalid ticket": () =>
+            start({ ...filled, ticket: "ops 7", ticketError: "Use a ticket key such as ABC-123.", focus: "none" }),
+          "Start: starting": () => start(filled, { toast: { style: "animated", title: "Starting timer…" } }),
+          Started: () => ({ type: "hud", title: "Started “Inbox triage”" }),
+          "Started, ticket from the description": () => ({ type: "hud", title: "Started “Inbox triage” on OPS-7" }),
+          "Started, stopping another": () => ({
+            type: "hud",
+            title: `Started “Inbox triage” and stopped “${running.description}” at ${format.duration(running)}`,
+          }),
+          "Error: key not valid (401)": () =>
+            start(filled, { toast: failure("Invalid API key.", "Open Extension Preferences") }),
+          "Error: read-only key (403)": () =>
+            start(filled, { toast: failure("API key is read-only.", "Open Snowtime Settings") }),
+          "Error: no connection": () =>
+            start(filled, { toast: failure("Can't reach snowtime.snowhound.eu.", "Open Extension Preferences") }),
+          "Error: too many requests (429)": () =>
+            start(filled, { toast: failure("Too many requests. Try again in 5 seconds.") }),
+          "Continue: from the running entry": () =>
+            continueFrom(
+              running,
+              `Continues “${running.description}” (running since ${format.time(running.startedAt)}). Starting stops it and starts a new entry.`,
+            ),
+          "Continue: from the newest entry": () =>
+            continueFrom(
+              newest,
+              `Continues “${newest.description}” from ${format.dayTitle(newest.startedAt).toLowerCase()}, ${format.time(newest.startedAt)}.`,
+            ),
+          "Continue: no entries": () => continueFrom(null, "Nothing to continue yet, so this starts a new timer."),
+          "Continued, splitting the running entry": () => ({
+            type: "hud",
+            title: `Started “${running.description}” again and stopped the previous entry at ${format.duration(running)}`,
+          }),
+        },
+        initial: "Start: several organizations",
+      });
+    </script>
+  </body>
+</html>

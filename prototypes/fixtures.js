@@ -50,6 +50,10 @@
   const entries = [
     running,
     entry(projects.internal, "Standup", null, at(0, 8, 45), 15),
+    entry(projects.internal, "Inbox triage", "OPS-7", at(1, 16, 30), 25),
+    entry(projects.website, "Landing page hero", "WEB-12", at(1, 13, 0), 180),
+    entry(projects.mobile, "Inbox notifications on Android", "MOB-34", at(1, 10, 0), 120),
+    entry(projects.internal, "Inbox triage", "OPS-7", at(1, 9, 0), 40),
     entry(projects.website, "Review navigation copy", "WEB-9", at(3, 14, 10), 95),
     entry(projects.mobile, "Push notification settings", "MOB-31", at(3, 10, 0), 160),
     entry(projects.internal, "Standup", null, at(3, 8, 45), 15),

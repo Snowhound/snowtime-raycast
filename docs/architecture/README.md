@@ -39,12 +39,13 @@ tests reach it.
 ## Sign-in and preferences
 
 The extension signs in with a personal API key that the user creates in Snowtime under
-Settings → API keys. Two extension preferences, which every command shares:
+Settings → API keys. Three extension preferences, which every command shares:
 
-| Preference    | Type        | Required | Default                         |
-| ------------- | ----------- | -------- | ------------------------------- |
-| `instanceUrl` | `textfield` | Yes      | `https://snowtime.snowhound.eu` |
-| `apiKey`      | `password`  | Yes      | None                            |
+| Preference        | Type        | Required | Default                         |
+| ----------------- | ----------- | -------- | ------------------------------- |
+| `instanceUrl`     | `textfield` | Yes      | `https://snowtime.snowhound.eu` |
+| `apiKey`          | `password`  | Yes      | None                            |
+| `suggestionRange` | `dropdown`  | No       | Today and yesterday             |
 
 - Raycast asks for required preferences before a command first runs, and stores a
   `password` preference encrypted. The Store forbids a separate setup command, and an
@@ -53,6 +54,9 @@ Settings → API keys. Two extension preferences, which every command shares:
   client appends `/api/v1` and tolerates a trailing slash.
 - The README and the preference descriptions say where to create the key and which scope
   each command needs: `read` for Recent Entries and the menu bar, `write` to start and stop.
+- `suggestionRange` (titled Suggestions From) sets how far back Start Timer looks for
+  entries to suggest: Today and yesterday, Last 7 days, or Last 14 days ("Starting and
+  continuing").
 
 ## Errors
 
@@ -123,11 +127,47 @@ refresh command would only repeat the second, so there is none.
 
 ## Starting and continuing
 
-Start Timer always opens an empty form: a new description, ticket, and project. Continue
-Timer opens the same form prefilled from the running entry, or from the newest entry when
-none runs, so the user can change anything before starting. With no entries at all, it
-opens empty, as Start Timer does. Recent Entries' Edit and Start pushes the same form,
-prefilled from the chosen entry. One form component (`src/components/`) serves all three.
+Start Timer is a list whose search bar is the description (decided 2026-10-03). Raycast's
+`Form.TextField` can't suggest values, and a list can, with Raycast's own filtering:
+
+- Its rows are suggestions: the user's entries in the chosen organization since the start
+  of the range `suggestionRange` sets, one row per description, ticket, and project at its
+  newest entry, grouped by day. Typing filters them by description, ticket, and project.
+- ↵ on a suggestion starts a new timer with its description, ticket, and project at once.
+  ⌘↵ (Edit and Start) pushes the timer form, prefilled from it.
+- While the user types, a last row, New timer, holds the typed text. With no match it is
+  the only row, so ↵ pushes the timer form with the text as the description, a ticket key
+  at its start split off by the rules in "Tickets from the description", and the
+  remembered project.
+- The list reads the range once per open, through `useCachedPromise`, so a second open
+  shows the last suggestions at once.
+
+The timer form asks for the description, ticket, project, and organization. Continue Timer
+opens it prefilled from the running entry, or from the newest entry when none runs, so the
+user can change anything before starting; with no entries at all, it opens empty. Start
+Timer's list and Recent Entries' Edit and Start push it. One form component
+(`src/components/`) serves them all.
+
+The project is remembered between timers, because people often work on one project for a
+while (decided 2026-10-03):
+
+- Starting a timer from any command saves its organization and project in `LocalStorage`.
+- The timer form preselects the saved project when Start Timer pushes it with typed text,
+  and when Continue Timer has no entry to continue. A prefilled entry's own project wins.
+- Changing the organization clears the saved project, and the form falls back to No
+  project. So does a saved project the organization has since archived or deleted, because
+  `GET /api/v1/orgs/:orgId/projects` lists only active ones.
+- The Project field's `info` says the choice is remembered.
+
+## Tickets from the description
+
+When the user leaves Ticket empty, the form takes a ticket key from the description on
+submit, as Snowtime's web app does when a description is committed (decided 2026-10-03). It
+uses Snowtime's rules from `src/lib/tickets.ts`, ported with their tests: a key at the start,
+optionally in brackets, becomes the ticket and leaves the description; a key later in the
+text becomes the ticket and stays in the text. A ticket the user typed is never replaced.
+The Ticket field's `info`, an ⓘ with a tooltip, says so, so the rule doesn't surprise anyone
+without taking space in the form.
 
 ## Language and formats
 

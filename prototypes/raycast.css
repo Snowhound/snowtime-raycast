@@ -338,9 +338,36 @@ kbd {
   align-items: flex-start;
 }
 
-.form .info {
+/* `info`: an ⓘ just right of the field, with its text as a tooltip. */
+.form .info-icon {
+  position: absolute;
+  top: 5px;
+  right: -22px;
   color: var(--muted);
+  cursor: help;
+  outline: none;
+}
+
+.form .tooltip {
+  position: absolute;
+  right: -8px;
+  bottom: 24px;
+  z-index: 2;
+  display: none;
+  width: max-content;
+  max-width: 260px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--window);
+  box-shadow: var(--shadow);
+  color: var(--text);
   font-size: 12px;
+}
+
+.form .info-icon:hover .tooltip,
+.form .info-icon:focus .tooltip,
+.form .tooltip[data-open] {
+  display: block;
 }
 
 .form .error {
@@ -582,4 +609,45 @@ kbd {
   margin: 16px 0 0;
   font-size: 13px;
   color: var(--muted);
+}
+
+.toast-action {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: var(--kbd);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* An open Form.Dropdown, over the fields below it. */
+.form .field {
+  position: relative;
+}
+
+.options {
+  position: absolute;
+  top: 32px;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 5px;
+  border-radius: 8px;
+  background: var(--window);
+  box-shadow: var(--shadow);
+}
+
+.options .row {
+  height: 28px;
+}
+
+.options .section-title {
+  padding: 6px 8px 2px;
+  font-size: 11px;
+}
+
+.toast strong {
+  white-space: nowrap;
 }

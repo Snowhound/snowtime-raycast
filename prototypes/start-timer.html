@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Start Timer · Snowtime for Raycast</title>
+    <link rel="stylesheet" href="raycast.css" />
+    <script src="fixtures.js"></script>
+    <script src="raycast.js"></script>
+  </head>
+  <body>
+    <script>
+      // Start Timer (task 001, subtask 02): a list whose search bar is the description. Rows
+      // are recent entries to start again; with no match, ↵ opens the timer form
+      // (timer-form.html) with what was typed.
+      const { orgs, projects, running, entries, format, NOW } = Fixtures;
+
+      // The default of the Suggestions From preference: today and yesterday.
+      const since = new Date(NOW);
+      since.setDate(since.getDate() - 1);
+      since.setHours(0, 0, 0, 0);
+      const remembered = projects.website;
+
+      // One row per description, ticket, and project, at its newest entry.
+      function suggestions(org = orgs.northwind) {
+        const seen = new Set();
+        return entries.filter((e) => {
+          const key = `${e.description}|${e.ticket}|${e.projectId}`;
+          if (e.organizationId !== org.id || new Date(e.startedAt) < since || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+
+      function matches(entry, text) {
+        const q = text.toLowerCase();
+        return [entry.description, entry.ticket, entry.project?.name].some((v) => v?.toLowerCase().includes(q));
+      }
+
+      // A key at the start of the text becomes the ticket, as Snowtime's detectTicket does.
+      function split(text) {
+        const m = /^\[?([A-Z][A-Z0-9]{1,9}-[1-9]\d{0,6})\]?\s+(.*)$/.exec(text);
+        return m ? { ticket: m[1], description: m[2] } : { ticket: undefined, description: text };
+      }
+
+      function row(e) {
+        const isRunning = e === running;
+        return {
+          icon: e.project ? "CircleFilled" : "Circle",
+          iconColor: e.project?.color ?? "var(--muted)",
+          title: e.description,
+          subtitle: e.project?.name ?? "No project",
+          accessories: [
+            ...(e.ticket ? [{ tag: e.ticket }] : []),
+            isRunning
+              ? { tag: { value: `Running ${format.duration(e)}`, color: "orange" } }
+              : { text: format.time(e.startedAt), tooltip: "Last started" },
+          ],
+          actions: [
+            {
+              title: isRunning ? "Start Again" : "Start Timer",
+              icon: "Play",
+              goto: running && !isRunning ? "Started, stopping another" : "Started",
+            },
+            { title: "Edit and Start", icon: "Pencil", goto: "Form: from a suggestion" },
+            { title: "Copy Description", icon: "CopyClipboard", shortcut: "cmd+c" },
+            { title: "Open Snowtime", icon: "Globe", shortcut: "cmd+o" },
+            { title: "Refresh", icon: "ArrowClockwise", shortcut: "cmd+r" },
+          ],
+        };
+      }
+
+      function newTimerRow(text, goto) {
+        const { ticket, description } = split(text);
+        return {
+          icon: "Plus",
+          title: description,
+          subtitle: "New timer",
+          accessories: ticket ? [{ tag: ticket }] : [],
+          actions: [{ title: "Edit and Start", icon: "Pencil", goto }],
+        };
+      }
+
+      function byDay(list) {
+        const days = [];
+        for (const e of list) {
+          const title = format.dayTitle(e.startedAt);
+          let day = days.find((d) => d.title === title);
+          if (!day) days.push((day = { title, items: [] }));
+          day.items.push(row(e));
+        }
+        return days;
+      }
+
+      function list({ text = "", org = orgs.northwind, several = true, extra = [], ...rest } = {}) {
+        const found = suggestions(org).filter((e) => !text || matches(e, text));
+        return {
+          type: "list",
+          searchPlaceholder: "What are you working on?",
+          searchText: text,
+          accessory: several ? org.name : undefined,
+          sections: [...byDay(found), ...extra],
+          ...rest,
+        };
+      }
+
+      // The form the list pushes, as timer-form.html draws it.
+      function form({ description, ticket, project = remembered }) {
+        return {
+          type: "form",
+          navigationTitle: "Start Timer",
+          back: true,
+          fields: [
+            { type: "textfield", title: "Description", value: description, placeholder: "What are you working on?" },
+            {
+              type: "textfield",
+              title: "Ticket",
+              value: ticket,
+              placeholder: "ABC-123",
+              focused: !ticket,
+              info: "Left empty, a ticket key in the description, such as ABC-123, becomes the ticket.",
+            },
+            {
+              type: "dropdown",
+              title: "Project",
+              value: project.name,
+              icon: "CircleFilled",
+              iconColor: project.color,
+              info: "Remembered for the next timer. Changing the organization clears it.",
+            },
+            { type: "separator" },
+            { type: "dropdown", title: "Organization", value: orgs.northwind.name, icon: "Building" },
+          ],
+          actions: [{ title: "Start Timer", icon: "Play", goto: "Started" }],
+        };
+      }
+
+      const failure = (message, action) => ({
+        style: "failure",
+        title: "Couldn't load recent entries",
+        message,
+        primaryAction: action && { title: action },
+      });
+
+      Raycast.prototype({
+        title: "Start Timer",
+        notes: [
+          "Type what you're working on. Matching entries from today and yesterday show below (the Suggestions From preference); ↵ starts one at once, ⌘↵ opens the form to change it first.",
+          "With no match, ↵ opens the timer form with the typed description, a ticket key at its start split off, and the remembered project.",
+          "Each description, ticket, and project shows once here, at its newest entry; Recent Entries lists every entry.",
+        ],
+        states: {
+          Loading: () => list({ isLoading: true, sections: [] }),
+          Suggestions: () => list(),
+          "One organization": () => list({ several: false }),
+          "Typing: matches": () =>
+            list({
+              text: "inbox",
+              extra: [{ title: "New", items: [newTimerRow("inbox", "Form: from the search")] }],
+            }),
+          "Typing: no match": () =>
+            list({
+              text: "Quarterly report",
+              extra: [{ items: [newTimerRow("Quarterly report", "Form: from the search")] }],
+            }),
+          "Typing: ticket, no match": () =>
+            list({
+              text: "OPS-9 Budget review",
+              extra: [{ items: [newTimerRow("OPS-9 Budget review", "Form: ticket from the search")] }],
+            }),
+          "Form: from the search": () => form({ description: "Quarterly report" }),
+          "Form: ticket from the search": () => form({ description: "Budget review", ticket: "OPS-9" }),
+          "Form: from a suggestion": () =>
+            form({ description: "Inbox triage", ticket: "OPS-7", project: projects.internal }),
+          "No recent entries": () =>
+            list({
+              org: orgs.harbor,
+              emptyView: {
+                icon: "Clock",
+                title: "No entries since yesterday",
+                description: "Type what you're working on to start a timer.",
+                actions: [{ title: "Edit and Start", icon: "Pencil", goto: "Form: from the search" }],
+              },
+            }),
+          "Error: key not valid (401)": () =>
+            list({
+              sections: [],
+              toast: failure("Invalid API key.", "Open Extension Preferences"),
+              emptyView: {
+                icon: "Key",
+                title: "Invalid API key",
+                description: "Check the API key in the extension's preferences.",
+                actions: [{ title: "Open Extension Preferences", icon: "Gear" }],
+              },
+            }),
+          "Error: no connection": () =>
+            list({
+              sections: [],
+              toast: failure("Can't reach snowtime.snowhound.eu.", "Open Extension Preferences"),
+              emptyView: {
+                icon: "WifiDisabled",
+                title: "Can't reach snowtime.snowhound.eu",
+                description: "Check your connection or the instance URL in the extension's preferences.",
+                actions: [
+                  { title: "Refresh", icon: "ArrowClockwise" },
+                  { title: "Open Extension Preferences", icon: "Gear" },
+                ],
+              },
+            }),
+          Started: () => ({ type: "hud", title: "Started “Inbox triage” on OPS-7" }),
+          "Started, stopping another": () => ({
+            type: "hud",
+            title: `Started “Inbox triage” and stopped “${running.description}” at ${format.duration(running)}`,
+          }),
+        },
+        initial: "Suggestions",
+      });
+    </script>
+  </body>
+</html>

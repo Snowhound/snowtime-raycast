@@ -9,6 +9,10 @@
 //     sections: [{ title, subtitle, items: [{ icon, title, subtitle, accessories, actions }] }],
 //     emptyView: { icon, title, description, actions }, toast }
 //   { type: 'form', navigationTitle, isLoading, fields: [...], actions, toast }
+//     A field is { type: 'textfield' | 'textarea' | 'dropdown' | 'separator' | 'description',
+//     title, value, placeholder, info, infoOpen, error, icon, focused }; an open dropdown adds
+//     open: true and options: [{ title, icon, iconColor, section }].
+//   A toast is { style: 'success' | 'failure' | 'animated', title, message, primaryAction }.
 //   { type: 'hud', title }
 //   { type: 'menubar', icon, title, open, sections: [{ title, items: [...] }] }
 //
@@ -44,6 +48,7 @@
     WifiDisabled:
       '<path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M2 8.82a15 15 0 0 1 4.17-2.65M10.66 5c4.01-.36 8.14.9 11.34 3.76M16.85 11.25a10 10 0 0 1 2.22 1.68M5 13a10 10 0 0 1 5.24-2.76M2 2l20 20"/>',
     Circle: '<circle cx="12" cy="12" r="10"/>',
+    CircleFilled: '<circle cx="12" cy="12" r="7" fill="currentColor"/>',
   };
 
   const colors = {
@@ -100,7 +105,7 @@
     if (!toast) return "";
     return `<div class="toast ${esc(toast.style ?? "success")}"><span class="dot"></span><strong>${esc(toast.title)}</strong>${
       toast.message ? `<span class="message">${esc(toast.message)}</span>` : ""
-    }</div>`;
+    }${toast.primaryAction ? `<span class="toast-action" title="Toast.primaryAction">${esc(toast.primaryAction.title)}</span>` : ""}</div>`;
   }
 
   function actionBar(view, actions) {
@@ -177,9 +182,34 @@
     ];
     return `<label>${esc(f.title)}</label><div class="field"><div class="${classes.join(" ")}" title="Form.${esc(
       { textfield: "TextField", dropdown: "Dropdown", textarea: "TextArea" }[f.type] ?? f.type,
-    )}">${f.icon ? icon(f.icon) + "&nbsp;" : ""}${esc(value)}</div>${f.error ? `<div class="error">${esc(f.error)}</div>` : ""}${
-      f.info ? `<div class="info">${esc(f.info)}</div>` : ""
-    }</div>`;
+    )}">${f.icon ? icon(f.icon, f.iconColor) + "&nbsp;" : ""}${esc(value)}</div>${f.error ? `<div class="error">${esc(f.error)}</div>` : ""}${
+      f.info ? infoHtml(f) : ""
+    }${f.open ? optionsHtml(f) : ""}</div>`;
+  }
+
+  // A field's `info`: Raycast shows an ⓘ beside the field, with the text as its tooltip.
+  // `infoOpen` shows the tooltip, so a state can put the text in a screenshot.
+  function infoHtml(f) {
+    return `<span class="info-icon" tabindex="0" aria-label="${esc(f.info)}">ⓘ<span class="tooltip"${
+      f.infoOpen ? ' data-open="true"' : ""
+    }>${esc(f.info)}</span></span>`;
+  }
+
+  // An open Form.Dropdown: its options, in sections when they have one, the value checked.
+  function optionsHtml(f) {
+    let html = "";
+    let section;
+    for (const o of f.options ?? []) {
+      if (o.section !== section) {
+        section = o.section;
+        if (section) html += `<div class="section-title">${esc(section)}</div>`;
+      }
+      const selected = o.title === f.value;
+      html += `<div class="row" aria-selected="${selected}">${icon(o.icon, o.iconColor)}<span class="title">${esc(o.title)}</span>${
+        selected ? `<span class="accessories">${icon("Checkmark")}</span>` : ""
+      }</div>`;
+    }
+    return `<div class="options" title="Form.Dropdown.Item">${html}</div>`;
   }
 
   function formHtml(view) {

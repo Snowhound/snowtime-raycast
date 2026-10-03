@@ -11,7 +11,7 @@ subtask 02.
 - [ ] `package.json` declares it as `continue-timer`, mode `view`, titled Continue Timer
 - [ ] It prefills the description, ticket, project, and organization from the running entry,
       or from the newest entry of the last 14 days when no timer runs
-- [ ] With no entries, it opens the empty form, as Start Timer does
+- [ ] With no entries, it opens as Start Timer does, with the remembered project
 - [ ] Starting from it behaves as Start Timer: a new entry with a new id, the HUD, and the
       menu bar refreshed
 - [ ] It matches its approved prototype in every state

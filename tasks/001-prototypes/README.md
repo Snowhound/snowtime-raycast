@@ -9,7 +9,8 @@ does; `docs/product.md` turns that into commands.
 ## Subtasks
 
 - [01: Prototype engine](01-engine.md): the shared files and the kit page
-- [02: Start Timer and Continue Timer](02-start-timer.md): one form, empty or prefilled
+- [02: Start Timer and the timer form](02-start-timer.md): a list of suggestions, and the form
+  it and Continue Timer open
 - [03: Recent Entries](03-recent-entries.md)
 - [04: Running Timer and Stop Timer](04-running-timer.md): the menu bar and the HUD
 

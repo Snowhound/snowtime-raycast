@@ -42,7 +42,12 @@
       const fields = [
         { type: "dropdown", title: "Dropdown", value: "Selected option", icon: "Building" },
         { type: "textfield", title: "Text Field", placeholder: "Placeholder text", focused: true },
-        { type: "textfield", title: "With Value", value: "A value", info: "An info line under the field." },
+        {
+          type: "textfield",
+          title: "With Value",
+          value: "A value",
+          info: "Form info: an ⓘ beside the field, with this text as its tooltip.",
+        },
         { type: "separator" },
         { type: "textarea", title: "Text Area", placeholder: "Longer text" },
         { type: "description", text: "Form.Description: a line of explanation." },
