@@ -1,6 +1,6 @@
 # 001: Prototypes
 
-Status: in-progress
+Status: done
 
 HTML prototypes of every command, approved before any command is built, as
 `prototypes/README.md` describes. Snowtime task 082, subtask 05, lists what the extension
@@ -16,4 +16,4 @@ does; `docs/product.md` turns that into commands.
 
 ## Acceptance criteria
 
-- [ ] Subtasks 01–04 are done, each prototype approved by the user
+- [x] Subtasks 01–04 are done, each prototype approved by the user

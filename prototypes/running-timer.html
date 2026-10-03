@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Running Timer · Snowtime for Raycast</title>
+    <link rel="stylesheet" href="raycast.css" />
+    <script src="fixtures.js"></script>
+    <script src="menu-bar-mark.js"></script>
+    <script src="raycast.js"></script>
+  </head>
+  <body>
+    <script>
+      // Running Timer (task 001, subtask 04): the menu bar item and its menu, and the HUDs of
+      // Stop Timer. The title is the elapsed time, counted on the client and moved once a
+      // minute (docs/architecture/README.md, "The menu bar").
+      const { running, entries, format } = Fixtures;
+
+      const dot = (e) => ({
+        icon: e.project ? "CircleFilled" : "Circle",
+        iconColor: e.project?.color ?? "var(--muted)",
+      });
+
+      // Up to five recent entries to start again: one per description, ticket, and project,
+      // leaving out the running one.
+      function recent(except) {
+        const seen = new Set(except ? [`${except.description}|${except.ticket}|${except.projectId}`] : []);
+        const out = [];
+        for (const e of entries) {
+          const key = `${e.description}|${e.ticket}|${e.projectId}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push(e);
+          if (out.length === 5) break;
+        }
+        return out.map((e, i) => ({
+          ...dot(e),
+          title: format.label(e),
+          subtitle: e.description ? (e.ticket ?? undefined) : undefined,
+          shortcut: `cmd+${i + 1}`,
+          tooltip: [format.label(e), e.project?.name, e.description && e.ticket].filter(Boolean).join(" · "),
+          goto: running ? "Started again, stopping the running one" : "Started again",
+        }));
+      }
+
+      const commands = {
+        items: [
+          { icon: "Play", title: "Start Timer…", shortcut: "cmd+n" },
+          { icon: "Forward", title: "Continue Timer…", shortcut: "cmd+shift+n" },
+          { icon: "List", title: "Recent Entries…", shortcut: "cmd+e" },
+        ],
+      };
+      const footer = {
+        items: [
+          { icon: "Globe", title: "Open Snowtime", shortcut: "cmd+o" },
+          { icon: "ArrowClockwise", title: "Refresh", shortcut: "cmd+r" },
+          { icon: "Gear", title: "Configure Extension…", shortcut: "cmd+," },
+        ],
+      };
+
+      function runningSection(entry) {
+        // The ticket names the entry when there is no description, so it isn't repeated here.
+        const details = [entry.project?.name ?? "No project", entry.description && entry.ticket]
+          .filter(Boolean)
+          .join(" · ");
+        return {
+          items: [
+            { ...dot(entry), title: format.label(entry), tooltip: format.label(entry) },
+            { info: true, title: details },
+            { info: true, title: `Since ${format.time(entry.startedAt)}`, subtitle: format.duration(entry) },
+            { icon: "Stop", title: "Stop Timer", shortcut: "cmd+s", goto: "Stopped" },
+          ],
+        };
+      }
+
+      function bar({ open = true, entry = running, error, startAgain = true, ...rest } = {}) {
+        const sections = error
+          ? [
+              {
+                items: [
+                  { icon: "Warning", iconColor: "red", title: error.title, tooltip: error.title },
+                  { info: true, title: error.detail },
+                ],
+              },
+              ...(entry ? [runningSection(entry)] : []),
+              footer,
+            ]
+          : [
+              entry ? runningSection(entry) : { items: [{ info: true, title: "No timer running" }] },
+              commands,
+              // The Show Start Again preference of Running Timer hides this section.
+              ...(startAgain ? [{ title: "Start Again", items: recent(entry) }] : []),
+              footer,
+            ];
+        return {
+          type: "menubar",
+          icon: "SnowtimeTemplate",
+          title: entry ? format.duration(entry) : undefined,
+          tooltip: entry ? `${format.label(entry)} · ${format.duration(entry)}` : "No timer running",
+          open,
+          sections,
+          ...rest,
+        };
+      }
+
+      const long = {
+        ...running,
+        description: "Rework the onboarding checklist so new members see their first project and team first",
+      };
+
+      Raycast.prototype({
+        title: "Running Timer",
+        notes: [
+          "The title is the elapsed time as h:mm, counted on the Mac and moved once a minute; with no timer running, the icon stands alone.",
+          "The icon is a template image, so macOS tints it to match the menu bar. Hover the item for the description.",
+          "⌘1–⌘5 start a recent entry again while the menu is open; the command's Show Start Again preference hides that section. Lines without an action are information only.",
+        ],
+        states: {
+          "Running, menu closed": () => bar({ open: false }),
+          Running: () => bar(),
+          "Start Again hidden": () => bar({ startAgain: false }),
+          "Not running, menu closed": () => bar({ open: false, entry: null }),
+          "Not running": () => bar({ entry: null }),
+          "Long description": () => bar({ entry: long }),
+          "Running with only a ticket": () => bar({ entry: { ...running, description: "" } }),
+          "Running without description or ticket": () => bar({ entry: { ...running, description: "", ticket: null } }),
+          "Stopped, only a ticket": () => ({ type: "hud", title: `Stopped WEB-12 at ${format.duration(running)}` }),
+          "Stopped, neither": () => ({ type: "hud", title: `Stopped the timer at ${format.duration(running)}` }),
+          "Error: key not valid (401)": () =>
+            bar({
+              entry: null,
+              error: { title: "Invalid API key", detail: "Check it under Configure Extension." },
+            }),
+          "Error: no connection, timer cached": () =>
+            bar({
+              error: {
+                title: "Can't reach snowtime.snowhound.eu",
+                detail: "Showing the last known timer.",
+              },
+            }),
+          Stopped: () => ({
+            type: "hud",
+            title: `Stopped “${running.description}” at ${format.duration(running)}`,
+          }),
+          "Stop Timer with nothing running": () => ({ type: "hud", icon: "Warning", title: "No timer is running" }),
+          "Started again": () => ({ type: "hud", title: "Started “Inbox triage” on OPS-7" }),
+          "Started again, stopping the running one": () => ({
+            type: "hud",
+            title: `Started “Inbox triage” and stopped “${running.description}” at ${format.duration(running)}`,
+          }),
+        },
+        initial: "Running",
+      });
+    </script>
+  </body>
+</html>

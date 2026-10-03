@@ -116,7 +116,13 @@
             project: entry ? entry.project : remembered,
             intro,
           }),
-          actions: startActions(entry === running ? "Continued, splitting the running entry" : "Started"),
+          actions: startActions(
+            entry === running
+              ? "Continued, splitting the running entry"
+              : entry && !entry.description
+                ? "Started, without a description"
+                : "Started",
+          ),
         };
       }
 
@@ -183,6 +189,14 @@
               newest,
               `Continues “${newest.description}” from ${format.dayTitle(newest.startedAt).toLowerCase()}, ${format.time(newest.startedAt)}.`,
             ),
+          "Continue: an entry with only a ticket": () => {
+            const e = Fixtures.withoutDescription.ticketOnly;
+            return continueFrom(
+              e,
+              `Continues WEB-15 from ${format.dayTitle(e.startedAt).toLowerCase()}, ${format.time(e.startedAt)}. It has no description; add one or leave it empty.`,
+            );
+          },
+          "Started, without a description": () => ({ type: "hud", title: "Started WEB-15" }),
           "Continue: no entries": () => continueFrom(null, "Nothing to continue yet, so this starts a new timer."),
           "Continued, splitting the running entry": () => ({
             type: "hud",

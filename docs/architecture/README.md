@@ -54,6 +54,9 @@ Settings → API keys. Three extension preferences, which every command shares:
   client appends `/api/v1` and tolerates a trailing slash.
 - The README and the preference descriptions say where to create the key and which scope
   each command needs: `read` for Recent Entries and the menu bar, `write` to start and stop.
+- Running Timer has one command preference of its own: `showStartAgain` (a `checkbox`,
+  labeled Show Start Again, on by default) shows the menu's Start Again section, the five
+  recent entries, or hides it for a shorter menu (decided 2026-10-03).
 - `suggestionRange` (titled Suggestions From) sets how far back Start Timer looks for
   entries to suggest: Today and yesterday, Last 7 days, or Last 14 days ("Starting and
   continuing").
@@ -176,6 +179,12 @@ Raycast supports only US English, so the extension does too, and doesn't transla
 - Times and dates use `en-US` formats in the Mac's time zone (`9:30 AM`, `Monday, Oct 5`).
   The API doesn't send the user's Snowtime time zone, so a day is the Mac's day.
 - Durations are `h:mm`, as in the menu bar.
+- A description is optional, so an entry is named as Snowtime's `entryLabel` names it
+  (`src/features/timer/entries.ts` there): by its description, else its ticket, else "No
+  description". A list shows the ticket as a tag only when the description names the entry,
+  so it doesn't appear twice. A HUD quotes a description, names a bare ticket as is, and
+  says "a timer" or "the timer" when there is neither ("Started WEB-15", "Stopped the timer
+  at 1:37").
 - Titles of commands, actions, and sections use Title Case; descriptions and toasts use
   sentence case.
 

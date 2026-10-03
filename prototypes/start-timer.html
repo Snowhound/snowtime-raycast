@@ -22,14 +22,16 @@
       const remembered = projects.website;
 
       // One row per description, ticket, and project, at its newest entry.
-      function suggestions(org = orgs.northwind) {
+      function suggestions(org = orgs.northwind, extra = []) {
         const seen = new Set();
-        return entries.filter((e) => {
-          const key = `${e.description}|${e.ticket}|${e.projectId}`;
-          if (e.organizationId !== org.id || new Date(e.startedAt) < since || seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
+        return [...extra, ...entries]
+          .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
+          .filter((e) => {
+            const key = `${e.description}|${e.ticket}|${e.projectId}`;
+            if (e.organizationId !== org.id || new Date(e.startedAt) < since || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
       }
 
       function matches(entry, text) {
@@ -48,10 +50,10 @@
         return {
           icon: e.project ? "CircleFilled" : "Circle",
           iconColor: e.project?.color ?? "var(--muted)",
-          title: e.description,
+          title: format.label(e),
           subtitle: e.project?.name ?? "No project",
           accessories: [
-            ...(e.ticket ? [{ tag: e.ticket }] : []),
+            ...format.ticketTag(e),
             isRunning
               ? { tag: { value: `Running ${format.duration(e)}`, color: "orange" } }
               : { text: format.time(e.startedAt), tooltip: "Last started" },
@@ -92,8 +94,8 @@
         return days;
       }
 
-      function list({ text = "", org = orgs.northwind, several = true, extra = [], ...rest } = {}) {
-        const found = suggestions(org).filter((e) => !text || matches(e, text));
+      function list({ text = "", org = orgs.northwind, several = true, extra = [], include = [], ...rest } = {}) {
+        const found = suggestions(org, include).filter((e) => !text || matches(e, text));
         return {
           type: "list",
           searchPlaceholder: "What are you working on?",
@@ -153,6 +155,8 @@
           Loading: () => list({ isLoading: true, sections: [] }),
           Suggestions: () => list(),
           "One organization": () => list({ several: false }),
+          "Without descriptions": () =>
+            list({ include: [Fixtures.withoutDescription.ticketOnly, Fixtures.withoutDescription.bare] }),
           "Typing: matches": () =>
             list({
               text: "inbox",
@@ -208,6 +212,7 @@
               },
             }),
           Started: () => ({ type: "hud", title: "Started “Inbox triage” on OPS-7" }),
+          "Started, without a description": () => ({ type: "hud", title: "Started a timer" }),
           "Started, stopping another": () => ({
             type: "hud",
             title: `Started “Inbox triage” and stopped “${running.description}” at ${format.duration(running)}`,

@@ -26,13 +26,14 @@ sizes, and fonts only need to read as Raycast. Don't spend review time on pixels
 
 ## Files
 
-| File                           | Role                                                                    |
-| ------------------------------ | ----------------------------------------------------------------------- |
-| [raycast.js](raycast.js)       | Draws a page: the state picker, the theme switch, and the Raycast views |
-| [raycast.css](raycast.css)     | The window, list, form, action panel, toast, HUD, and menu bar          |
-| [fixtures.js](fixtures.js)     | Fictional data in the API's shapes, a fixed `NOW`, and the formatting   |
-| [kit.html](kit.html)           | Every view type and state, for checking the engine itself               |
-| `../assets/extension-icon.png` | The extension icon, shown in the action bar and the menu bar            |
+| File                                 | Role                                                                    |
+| ------------------------------------ | ----------------------------------------------------------------------- |
+| [raycast.js](raycast.js)             | Draws a page: the state picker, the theme switch, and the Raycast views |
+| [raycast.css](raycast.css)           | The window, list, form, action panel, toast, HUD, and menu bar          |
+| [fixtures.js](fixtures.js)           | Fictional data in the API's shapes, a fixed `NOW`, and the formatting   |
+| [menu-bar-mark.js](menu-bar-mark.js) | Snowtime's mark in one color, for the menu bar's template icon          |
+| [kit.html](kit.html)                 | Every view type and state, for checking the engine itself               |
+| `../assets/extension-icon.png`       | The extension icon, shown in the action bar                             |
 
 A page loads `raycast.css`, `fixtures.js`, and `raycast.js`, then calls
 `Raycast.prototype({ title, notes, states })`. `raycast.js` documents the view shapes at
@@ -51,5 +52,6 @@ same moment, `Fixtures.NOW`: Monday 5 October 2026, 10:42 local time.
 | [start-timer.html](start-timer.html)       | Start Timer                                 | Approved |
 | [timer-form.html](timer-form.html)         | The timer form: Start Timer, Continue Timer | Approved |
 | [recent-entries.html](recent-entries.html) | Recent Entries                              | Approved |
+| [running-timer.html](running-timer.html)   | Running Timer, Stop Timer                   | Approved |
 
 Task 001 adds a page per command.

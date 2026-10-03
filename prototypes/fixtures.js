@@ -62,6 +62,13 @@
     entry(projects.onboarding, "Kickoff call with Harbor", null, at(4, 8, 0), 60, orgs.harbor.id),
   ];
 
+  // Entries without a description (task 001): one with only a ticket, one with neither. The
+  // pages add them where a state needs them.
+  const withoutDescription = {
+    ticketOnly: entry(projects.website, "", "WEB-15", at(0, 8, 0), 40),
+    bare: entry(projects.internal, "", null, at(1, 15, 0), 30),
+  };
+
   // Raycast's UI is US English (docs/architecture/README.md, "Language and formats").
   const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
   const day = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric" });
@@ -75,6 +82,19 @@
   function duration(e) {
     const end = e.stoppedAt ? new Date(e.stoppedAt) : NOW;
     return clock(end - new Date(e.startedAt));
+  }
+
+  // An entry's name, as Snowtime's entryLabel gives it: the description, else the ticket,
+  // else a stand-in. A list shows the ticket as a tag only when the description names the
+  // entry, so it doesn't appear twice.
+  function label(e) {
+    return e.description || e.ticket || "No description";
+  }
+
+  // The entry in a HUD: its name in quotes, a bare ticket as is, or nothing.
+  function hudName(e) {
+    if (e.description) return `“${e.description}”`;
+    return e.ticket ?? null;
   }
 
   function dayTitle(iso) {
@@ -93,6 +113,7 @@
     projects,
     running,
     entries,
+    withoutDescription,
     me: {
       user: { id: "01920000-0000-7000-8000-000000000104", name: "Max Member", email: "max@example.com" },
       organizations: [orgs.harbor, orgs.northwind],
@@ -102,6 +123,9 @@
       clock,
       duration,
       dayTitle,
+      label,
+      hudName,
+      ticketTag: (e) => (e.description && e.ticket ? [{ tag: e.ticket }] : []),
     },
   };
 })();

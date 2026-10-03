@@ -51,10 +51,10 @@
         return {
           icon: e.project ? "CircleFilled" : "Circle",
           iconColor: e.project?.color ?? "var(--muted)",
-          title: e.description || "No description",
+          title: format.label(e),
           subtitle: e.project?.name ?? "No project",
           accessories: [
-            ...(e.ticket ? [{ tag: e.ticket }] : []),
+            ...format.ticketTag(e),
             ...(isRunning ? [{ tag: { value: "Running", color: "orange" } }] : []),
             { text: format.duration(e), icon: "Clock", tooltip: span(e) },
           ],
@@ -133,6 +133,9 @@
           Searching: () => list({ text: "inbox" }),
           "No matches": () => list({ text: "budget" }),
           "Long description": () => list({ extra: [long] }),
+          "Without descriptions": () =>
+            list({ extra: [Fixtures.withoutDescription.ticketOnly, Fixtures.withoutDescription.bare] }),
+          "Started again, without a description": () => ({ type: "hud", title: "Started WEB-15" }),
           "No entries": () =>
             list({
               org: { ...orgs.harbor, id: "none" },

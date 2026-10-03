@@ -26,6 +26,8 @@ What every command needs before it can talk to Snowtime, as
       `409` on the retry as started only if `GET /api/v1/timer` returns that id
 - [ ] `src/lib/` saves the organization and project of the last started timer, and clears
       the project when the organization changes
+- [ ] `src/lib/` names entries as Snowtime's `entryLabel` does: the description, else the
+      ticket, else "No description"
 - [ ] `src/lib/` ports `detectTicket` and its helpers from Snowtime's `src/lib/tickets.ts`,
       with the cases of its tests
 - [ ] Vitest covers `src/api/` and `src/lib/`, including each error case, the retry, the

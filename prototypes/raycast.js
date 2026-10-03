@@ -13,8 +13,10 @@
 //     title, value, placeholder, info, infoOpen, error, icon, focused }; an open dropdown adds
 //     open: true and options: [{ title, icon, iconColor, section }].
 //   A toast is { style: 'success' | 'failure' | 'animated', title, message, primaryAction }.
-//   { type: 'hud', title }
-//   { type: 'menubar', icon, title, open, sections: [{ title, items: [...] }] }
+//   { type: 'hud', title, icon }
+//   { type: 'menubar', icon, title, tooltip, open, sections: [{ title, items: [...] }] }
+//     A menu item is { icon, iconColor, title, subtitle, shortcut, tooltip, goto }, or
+//     { info: true, ... } for a greyed-out line without an action.
 //
 // An action is { title, icon, shortcut: 'cmd+shift+c', style: 'destructive', goto: 'State' }.
 // The first is the primary action (↵, or ⌘↵ in a form); in a list the second runs with ⌘↵.
@@ -23,6 +25,7 @@
   // Raycast `Icon` names, drawn with Lucide paths. Unknown names fall back to a circle.
   const paths = {
     Play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+    Forward: '<polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/>',
     Stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>',
     Clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
     List: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
@@ -80,6 +83,10 @@
   function icon(name, color) {
     if (!name) return "";
     if (name === "Snowtime") return '<img src="../assets/extension-icon.png" alt="" width="16" height="16">';
+    // The menu bar's template image, in the bar's own text color (menu-bar-mark.js).
+    if (name === "SnowtimeTemplate" && window.MENU_BAR_MARK) {
+      return `<span class="mark" title="Template image">${window.MENU_BAR_MARK}</span>`;
+    }
     const style = color ? ` style="color:${colors[color] ?? color}"` : "";
     return `<svg class="icon" viewBox="0 0 24 24"${style} aria-hidden="true"><title>Icon.${esc(name)}</title>${paths[name] ?? paths.Circle}</svg>`;
   }
@@ -171,7 +178,7 @@
   function fieldHtml(f) {
     if (f.type === "separator") return '<div class="separator"></div>';
     if (f.type === "description") return `<div class="description-text">${esc(f.text)}</div>`;
-    const value = f.value ?? f.placeholder ?? "";
+    const value = f.value || f.placeholder || "";
     const classes = [
       "control",
       f.value ? "" : "placeholder",
@@ -228,13 +235,14 @@
       if (s > 0) menu += '<div class="separator"></div>';
       if (section.title) menu += `<div class="section-title">${esc(section.title)}</div>`;
       for (const item of section.items) {
-        menu += `<div class="row" data-menu="${items.length}">${icon(item.icon, item.iconColor)}<span class="title">${esc(item.title)}</span>${
+        // An item without an action is information: Raycast greys it out.
+        menu += `<div class="row${item.info ? " info" : ""}" data-menu="${items.length}" title="${esc(item.tooltip)}">${icon(item.icon, item.iconColor)}<span class="title">${esc(item.title)}</span>${
           item.subtitle ? `<span class="subtitle">${esc(item.subtitle)}</span>` : ""
         }${item.shortcut ? `<span class="shortcut">${shortcut(item.shortcut)}</span>` : ""}</div>`;
         items.push(item);
       }
     });
-    const extra = `<span class="extra${view.open ? " open" : ""}" title="MenuBarExtra">${icon(view.icon ?? "Snowtime")}${
+    const extra = `<span class="extra${view.open ? " open" : ""}" title="${esc(view.tooltip ?? "MenuBarExtra")}">${icon(view.icon ?? "Snowtime")}${
       view.title ? `<span>${esc(view.title)}</span>` : ""
     }</span>`;
     return {
@@ -247,7 +255,7 @@
 
   function render(stage, view, goto) {
     if (view.type === "hud") {
-      stage.innerHTML = `<div class="hud" title="showHUD">${icon("Checkmark")}<span>${esc(view.title)}</span></div>`;
+      stage.innerHTML = `<div class="hud" title="showHUD">${icon(view.icon ?? "Checkmark")}<span>${esc(view.title)}</span></div>`;
       return;
     }
     if (view.type === "menubar") {
