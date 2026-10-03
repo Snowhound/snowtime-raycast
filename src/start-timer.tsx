@@ -1,17 +1,18 @@
 import { Action, ActionPanel, Color, getPreferenceValues, Icon, List, Keyboard } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
-import { api, snowtimeUrl, type Organization } from "./api";
+import { snowtimeUrl, type Organization } from "./api";
 import { showApiFailure } from "./api/toast";
 import { ErrorView } from "./components/error-view";
+import { OrganizationDropdown } from "./components/organization-dropdown";
 import { projectIcon } from "./components/project-icon";
 import { startTimer } from "./components/start";
 import { TimerForm } from "./components/timer-form";
 import { useElapsed } from "./components/use-elapsed";
 import { entryLabel } from "./lib/entries";
-import { formatDay, formatDuration, formatTime, lastDays } from "./lib/format";
-import { pickOrganization, rememberedOrganization, rememberOrganization } from "./lib/organization";
-import { matches, newTimerFrom, suggestionsFrom, type Suggestion } from "./lib/suggestions";
+import { formatDuration, formatTime } from "./lib/format";
+import { loadRecent } from "./lib/recent";
+import { groupByDay, matches, newTimerFrom, suggestionsFrom, type EntryRow } from "./lib/rows";
 
 // Start Timer: a list whose search bar is the description, with the user's recent entries
 // to start again (docs/architecture/README.md, "Starting and continuing").
@@ -23,17 +24,8 @@ const EMPTY_TITLES: Record<string, string> = {
 };
 
 async function loadSuggestions(organizationId: string | undefined, days: number) {
-  const client = api();
-  const me = await client.me();
-  const organization = organizationId
-    ? pickOrganization(me.organizations, organizationId)
-    : await rememberedOrganization(me.organizations);
-  if (!organization) return { organizations: me.organizations, organization, suggestions: [] };
-  const [projects, entries] = await Promise.all([
-    client.projects(organization.id),
-    client.entries(organization.id, { ...lastDays(days), userId: me.user.id }),
-  ]);
-  return { organizations: me.organizations, organization, suggestions: suggestionsFrom(entries, projects) };
+  const { organizations, organization, projects, entries } = await loadRecent(organizationId, days);
+  return { organizations, organization, suggestions: suggestionsFrom(entries, projects) };
 }
 
 export default function Command() {
@@ -50,12 +42,6 @@ export default function Command() {
   const found = (data?.suggestions ?? []).filter((suggestion) => !searchText.trim() || matches(suggestion, searchText));
   const sections = groupByDay(found);
 
-  function changeOrganization(id: string) {
-    if (!organization || id === organization.id) return;
-    rememberOrganization(id);
-    setOrganizationId(id);
-  }
-
   return (
     <List
       navigationTitle="Start Timer"
@@ -64,13 +50,11 @@ export default function Command() {
       onSearchTextChange={setSearchText}
       isLoading={isLoading}
       searchBarAccessory={
-        data && data.organizations.length > 1 && organization ? (
-          <List.Dropdown tooltip="Organization" value={organization.id} onChange={changeOrganization}>
-            {data.organizations.map((org) => (
-              <List.Dropdown.Item key={org.id} value={org.id} title={org.name} icon={Icon.Building} />
-            ))}
-          </List.Dropdown>
-        ) : undefined
+        <OrganizationDropdown
+          organizations={data?.organizations ?? []}
+          organization={organization}
+          onChange={setOrganizationId}
+        />
       }
     >
       {!data && isLoading ? null : error && !data ? (
@@ -105,9 +89,9 @@ export default function Command() {
         />
       )}
       {organization &&
-        sections.map(([title, suggestions]) => (
+        sections.map(({ title, rows }) => (
           <List.Section key={title} title={title}>
-            {suggestions.map((suggestion) => (
+            {rows.map((suggestion) => (
               <SuggestionItem
                 key={suggestion.entry.id}
                 suggestion={suggestion}
@@ -131,7 +115,7 @@ function SuggestionItem({
   organization,
   onRefresh,
 }: {
-  suggestion: Suggestion;
+  suggestion: EntryRow;
   organization: Organization;
   onRefresh: () => void;
 }) {
@@ -219,15 +203,4 @@ function NewTimerItem({ text, organization }: { text: string; organization: Orga
       }
     />
   );
-}
-
-// Suggestions under their day's title, newest day first.
-function groupByDay(suggestions: Suggestion[]) {
-  const days = new Map<string, Suggestion[]>();
-  const now = new Date();
-  for (const suggestion of suggestions) {
-    const title = formatDay(suggestion.entry.startedAt, now);
-    days.set(title, [...(days.get(title) ?? []), suggestion]);
-  }
-  return [...days];
 }

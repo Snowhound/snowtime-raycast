@@ -24,6 +24,23 @@
       "title": "Stop Timer",
       "description": "Stop the running timer.",
       "mode": "no-view"
+    },
+    {
+      "name": "recent-entries",
+      "title": "Recent Entries",
+      "description": "Browse your entries of the last 14 days and start any of them again.",
+      "mode": "view",
+      "preferences": [
+        {
+          "name": "mergeTickets",
+          "title": "Merge Tickets",
+          "label": "Merge a day's entries with the same ticket",
+          "description": "Show a day's entries with the same ticket as one row, with their total time. Entries without a ticket stay separate.",
+          "type": "checkbox",
+          "default": false,
+          "required": false
+        }
+      ]
     }
   ],
   "preferences": [

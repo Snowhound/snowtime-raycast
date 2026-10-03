@@ -26,7 +26,9 @@
         return `${format.time(e.startedAt)} – ${end}`;
       }
 
-      function actions(e) {
+      // `merged` is the row's count when it holds several entries; `inGroup` marks a row of
+      // Show Entries, which lists one merged row's entries and has no Refresh.
+      function actions(e, { merged = 1, inGroup = false } = {}) {
         const isRunning = e === running;
         const start = {
           title: "Start Again",
@@ -38,16 +40,23 @@
         const edit = { title: "Edit and Start", icon: "Pencil", goto: "Edit and Start" };
         return [
           ...(isRunning ? [{ ...stop, shortcut: undefined }, edit, start] : [start, edit]),
+          ...(merged > 1
+            ? [{ title: "Show Entries", icon: "List", shortcut: "cmd+e", section: "Entry", goto: "Show Entries" }]
+            : []),
           { title: "Copy Description", icon: "CopyClipboard", shortcut: "cmd+c", section: "Entry" },
           ...(e.ticket ? [{ title: "Copy Ticket", icon: "Tag", shortcut: "cmd+shift+c", section: "Entry" }] : []),
           { title: "Open in Snowtime", icon: "Globe", shortcut: "cmd+o", section: "Entry" },
           ...(running && !isRunning ? [{ ...stop, section: "Running Timer" }] : []),
-          { title: "Refresh", icon: "ArrowClockwise", shortcut: "cmd+r", section: "List" },
+          ...(inGroup ? [] : [{ title: "Refresh", icon: "ArrowClockwise", shortcut: "cmd+r", section: "List" }]),
         ];
       }
 
-      function row(e) {
-        const isRunning = e === running;
+      // A row stands for one entry, or, with the Merge Tickets preference, for a day's entries
+      // with one ticket: `group` holds them, newest first, and the newest names the row.
+      function row(group, inGroup = false) {
+        const e = group[0];
+        const isRunning = group.includes(running);
+        const total = format.clock(group.reduce((sum, g) => sum + minutes(g), 0) * MIN);
         return {
           icon: e.project ? "CircleFilled" : "Circle",
           iconColor: e.project?.color ?? "var(--muted)",
@@ -56,13 +65,34 @@
           accessories: [
             ...format.ticketTag(e),
             ...(isRunning ? [{ tag: { value: "Running", color: "orange" } }] : []),
-            { text: format.duration(e), icon: "Clock", tooltip: span(e) },
+            ...(group.length > 1
+              ? [{ text: String(group.length), icon: "List", tooltip: `${group.length} entries` }]
+              : []),
+            { text: total, icon: "Clock", tooltip: group.map(span).reverse().join(", ") },
           ],
-          actions: actions(e),
+          actions: actions(isRunning ? running : e, { merged: group.length, inGroup }),
         };
       }
 
-      function byDay(list) {
+      // A day's entries as rows: each its own, or, merged, one per ticket at the place of its
+      // newest entry. Entries without a ticket always stay their own row.
+      function rowsOf(list, merge) {
+        if (!merge) return list.map((e) => [e]);
+        const groups = [];
+        const byTicket = new Map();
+        for (const e of list) {
+          const group = e.ticket && byTicket.get(e.ticket);
+          if (group) group.push(e);
+          else {
+            const created = [e];
+            if (e.ticket) byTicket.set(e.ticket, created);
+            groups.push(created);
+          }
+        }
+        return groups;
+      }
+
+      function byDay(list, merge) {
         const days = [];
         for (const e of list) {
           const title = format.dayTitle(e.startedAt);
@@ -73,11 +103,11 @@
         return days.map((d) => ({
           title: d.title,
           subtitle: format.clock(d.entries.reduce((sum, e) => sum + minutes(e), 0) * MIN),
-          items: d.entries.map(row),
+          items: rowsOf(d.entries, merge).map(row),
         }));
       }
 
-      function list({ org = orgs.northwind, several = true, text = "", extra = [], ...rest } = {}) {
+      function list({ org = orgs.northwind, several = true, text = "", extra = [], merge = false, ...rest } = {}) {
         const q = text.toLowerCase();
         const found = [...extra, ...entries]
           .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
@@ -91,7 +121,7 @@
           searchPlaceholder: "Search entries",
           searchText: text,
           accessory: several ? org.name : undefined,
-          sections: byDay(found),
+          sections: byDay(found, merge),
           emptyView: q
             ? {
                 icon: "List",
@@ -119,17 +149,63 @@
         startedAt: new Date(Fixtures.NOW.getTime() - 135 * MIN).toISOString(),
       };
 
+      function at(daysAgo, hours, mins) {
+        const d = new Date(Fixtures.NOW);
+        d.setDate(d.getDate() - daysAgo);
+        d.setHours(hours, mins, 0, 0);
+        return d.toISOString();
+      }
+
+      function stopped(e, startedAt, mins, fields = {}) {
+        const start = new Date(startedAt).getTime();
+        return {
+          ...e,
+          ...fields,
+          id: `${e.id}-${startedAt}`,
+          startedAt,
+          stoppedAt: new Date(start + mins * MIN).toISOString(),
+        };
+      }
+
+      // Work on one ticket split across a day: WEB-12 earlier today, beside the running entry,
+      // and yesterday under another description.
+      const sameTicket = [
+        stopped(running, at(0, 7, 30), 60),
+        stopped(running, at(1, 17, 0), 45, { description: "Hero image review" }),
+      ];
+
       Raycast.prototype({
         title: "Recent Entries",
         notes: [
           "Every entry of the last 14 days is its own row, repeats included, grouped by day with the day's total. Typing filters by description, ticket, and project.",
           "↵ starts an entry again as a new timer; on the running entry it stops the timer. ⌘↵ opens the timer form prefilled, to change it first.",
           "Hover a duration to see the entry's start and end.",
+          "The Merge Tickets preference (off by default) folds a day's entries with the same ticket into one row: the newest names it, the count shows how many, and the duration is their total. Entries without a ticket stay their own rows. Show Entries (⌘E) on a merged row lists its entries in a view of their own.",
         ],
         states: {
           Loading: () => list({ isLoading: true, sections: [] }),
           Entries: () => list(),
           "One organization": () => list({ several: false }),
+          "Same ticket, not merged": () => list({ extra: sameTicket }),
+          "Merge Tickets on": () => list({ extra: sameTicket, merge: true }),
+          "Merge Tickets on, searching": () => list({ extra: sameTicket, merge: true, text: "hero" }),
+          // Show Entries (⌘E) on today's merged WEB-12 row: its entries, each with its own actions.
+          "Show Entries": () => {
+            const group = [running, sameTicket[0]];
+            return {
+              type: "list",
+              back: true,
+              navigationTitle: "WEB-12 · Today",
+              searchPlaceholder: "Search entries",
+              sections: [
+                {
+                  title: "Today",
+                  subtitle: format.clock(group.reduce((sum, g) => sum + minutes(g), 0) * MIN),
+                  items: group.map((e) => row([e], true)),
+                },
+              ],
+            };
+          },
           Searching: () => list({ text: "inbox" }),
           "No matches": () => list({ text: "budget" }),
           "Long description": () => list({ extra: [long] }),

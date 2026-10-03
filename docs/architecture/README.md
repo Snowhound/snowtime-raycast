@@ -57,6 +57,12 @@ Settings → API keys. Three extension preferences, which every command shares:
 - Running Timer has one command preference of its own: `showStartAgain` (a `checkbox`,
   labeled Show Start Again, on by default) shows the menu's Start Again section, the five
   recent entries, or hides it for a shorter menu (decided 2026-10-03).
+- Recent Entries has one too: `mergeTickets` (a `checkbox`, titled Merge Tickets, off by
+  default) shows a day's entries with the same ticket as one row, named by the newest, with
+  their count and total time. Entries without a ticket always stay their own rows. The
+  row's actions act on the running entry if the row holds it, else on the newest, and Show
+  Entries (`⌘E`) pushes a list of its entries, since a Raycast list can't expand a row in
+  place (decided 2026-10-03).
 - `suggestionRange` (titled Suggestions From) sets how far back Start Timer looks for
   entries to suggest: Today and yesterday, Last 7 days, or Last 14 days ("Starting and
   continuing").
@@ -140,8 +146,10 @@ Start Timer is a list whose search bar is the description (decided 2026-10-03). 
   newest entry, grouped by day. Typing filters them by description, ticket, and project.
   The list filters them itself instead of with Raycast's fuzzy filtering, so it knows
   whether anything matched and can title the New timer row's section only then.
-- A suggestion whose project has since been archived or deleted starts without one, as the
-  API refuses a timer on an inactive project.
+- An entry whose project has since been archived or deleted starts again without one, as
+  the API refuses a timer on an inactive project. `GET /api/v1/orgs/:orgId/projects` lists
+  only active projects, so Recent Entries can't name such a project and says "Archived
+  project".
 - ↵ on a suggestion starts a new timer with its description, ticket, and project at once.
   ⌘↵ (Edit and Start) pushes the timer form, prefilled from it.
 - While the user types, a last row, New timer, holds the typed text. With no match it is
