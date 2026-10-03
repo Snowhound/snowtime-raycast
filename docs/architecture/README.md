@@ -232,6 +232,8 @@ The extension follows Raycast's
 Those that shape the design:
 
 - `author` is the publisher's Raycast username (`kustav_prants`), and `license` is `MIT`.
+- `owner` is the Raycast organization `snowhound`, and `access` is `public`, so the
+  extension is listed in the public Store rather than only inside the organization.
 - The icon is a 512 × 512 PNG that works in light and dark: `assets/extension-icon.png`,
   with `extension-icon@dark.png` beside it.
 - Command titles are `<verb> <noun>` or `<noun>` in Title Case, without articles: Start

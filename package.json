@@ -5,6 +5,8 @@
   "description": "Start and stop your Snowtime timer.",
   "icon": "extension-icon.png",
   "author": "kustav_prants",
+  "owner": "snowhound",
+  "access": "public",
   "categories": [
     "Productivity"
   ],
