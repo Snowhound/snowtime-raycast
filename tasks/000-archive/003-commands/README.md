@@ -1,6 +1,6 @@
 # 003: Commands
 
-Status: in-progress
+Status: done
 
 The five commands of `docs/product.md`, each built from its approved prototype (task 001)
 on the API client (task 002). A command is done when it matches its prototype in Raycast,
@@ -16,5 +16,5 @@ checked by the user against a local Snowtime (`docs/development.md`, "Checking a
 
 ## Acceptance criteria
 
-- [ ] Subtasks 01–05 are done
+- [x] Subtasks 01–05 are done
 - [x] The blank `index` command from the scaffold is gone

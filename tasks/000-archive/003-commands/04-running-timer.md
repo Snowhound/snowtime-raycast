@@ -1,6 +1,6 @@
 # 04: Running Timer
 
-Status: in-progress
+Status: done
 
 The menu bar command, `src/running-timer.tsx`, from the prototype of task 001, subtask 04.
 
@@ -19,5 +19,5 @@ The menu bar command, `src/running-timer.tsx`, from the prototype of task 001, s
 - [x] Without a connection it keeps showing the cached timer and says what failed
 - [x] The icon is a monochrome template image of the Hound Hour mark
       (`prototypes/menu-bar-mark.js` holds it as SVG), so it follows the menu bar's color
-- [ ] The user checks it in the menu bar for at least an hour of running time, that a timer
+- [x] The user checks it in the menu bar for at least an hour of running time, that a timer
       started in the web app shows within 5 minutes, and that Refresh shows it at once
