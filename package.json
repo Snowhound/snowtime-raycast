@@ -20,6 +20,12 @@
       "mode": "view"
     },
     {
+      "name": "continue-timer",
+      "title": "Continue Timer",
+      "description": "Start a timer from your running or newest entry, with any changes.",
+      "mode": "view"
+    },
+    {
       "name": "stop-timer",
       "title": "Stop Timer",
       "description": "Stop the running timer.",
