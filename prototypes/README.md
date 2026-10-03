@@ -45,10 +45,11 @@ same moment, `Fixtures.NOW`: Monday 5 October 2026, 10:42 local time.
 
 ## Prototypes
 
-| Page                                 | Command                                     | Status   |
-| ------------------------------------ | ------------------------------------------- | -------- |
-| [kit.html](kit.html)                 | The engine                                  | Done     |
-| [start-timer.html](start-timer.html) | Start Timer                                 | Approved |
-| [timer-form.html](timer-form.html)   | The timer form: Start Timer, Continue Timer | Approved |
+| Page                                       | Command                                     | Status   |
+| ------------------------------------------ | ------------------------------------------- | -------- |
+| [kit.html](kit.html)                       | The engine                                  | Done     |
+| [start-timer.html](start-timer.html)       | Start Timer                                 | Approved |
+| [timer-form.html](timer-form.html)         | The timer form: Start Timer, Continue Timer | Approved |
+| [recent-entries.html](recent-entries.html) | Recent Entries                              | Approved |
 
 Task 001 adds a page per command.

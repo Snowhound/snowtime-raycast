@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recent Entries · Snowtime for Raycast</title>
+    <link rel="stylesheet" href="raycast.css" />
+    <script src="fixtures.js"></script>
+    <script src="raycast.js"></script>
+  </head>
+  <body>
+    <script>
+      // Recent Entries (task 001, subtask 03): the last 14 days of entries, every one its own
+      // row, newest first. Any of them starts again; the running one stops.
+      const { orgs, projects, running, entries, format } = Fixtures;
+
+      const MIN = 60_000;
+
+      function minutes(e) {
+        const end = e.stoppedAt ? new Date(e.stoppedAt) : Fixtures.NOW;
+        return Math.floor((end - new Date(e.startedAt)) / MIN);
+      }
+
+      function span(e) {
+        const end = e.stoppedAt ? format.time(e.stoppedAt) : "now";
+        return `${format.time(e.startedAt)} – ${end}`;
+      }
+
+      function actions(e) {
+        const isRunning = e === running;
+        const start = {
+          title: "Start Again",
+          icon: "Play",
+          goto: running && !isRunning ? "Started again, stopping another" : "Started again",
+        };
+        const stop = { title: "Stop Timer", icon: "Stop", shortcut: "cmd+s", goto: "Stopped" };
+        // ⌘↵ is Edit and Start on every row, as in Start Timer.
+        const edit = { title: "Edit and Start", icon: "Pencil", goto: "Edit and Start" };
+        return [
+          ...(isRunning ? [{ ...stop, shortcut: undefined }, edit, start] : [start, edit]),
+          { title: "Copy Description", icon: "CopyClipboard", shortcut: "cmd+c", section: "Entry" },
+          ...(e.ticket ? [{ title: "Copy Ticket", icon: "Tag", shortcut: "cmd+shift+c", section: "Entry" }] : []),
+          { title: "Open in Snowtime", icon: "Globe", shortcut: "cmd+o", section: "Entry" },
+          ...(running && !isRunning ? [{ ...stop, section: "Running Timer" }] : []),
+          { title: "Refresh", icon: "ArrowClockwise", shortcut: "cmd+r", section: "List" },
+        ];
+      }
+
+      function row(e) {
+        const isRunning = e === running;
+        return {
+          icon: e.project ? "CircleFilled" : "Circle",
+          iconColor: e.project?.color ?? "var(--muted)",
+          title: e.description || "No description",
+          subtitle: e.project?.name ?? "No project",
+          accessories: [
+            ...(e.ticket ? [{ tag: e.ticket }] : []),
+            ...(isRunning ? [{ tag: { value: "Running", color: "orange" } }] : []),
+            { text: format.duration(e), icon: "Clock", tooltip: span(e) },
+          ],
+          actions: actions(e),
+        };
+      }
+
+      function byDay(list) {
+        const days = [];
+        for (const e of list) {
+          const title = format.dayTitle(e.startedAt);
+          let day = days.find((d) => d.title === title);
+          if (!day) days.push((day = { title, entries: [] }));
+          day.entries.push(e);
+        }
+        return days.map((d) => ({
+          title: d.title,
+          subtitle: format.clock(d.entries.reduce((sum, e) => sum + minutes(e), 0) * MIN),
+          items: d.entries.map(row),
+        }));
+      }
+
+      function list({ org = orgs.northwind, several = true, text = "", extra = [], ...rest } = {}) {
+        const q = text.toLowerCase();
+        const found = [...extra, ...entries]
+          .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
+          .filter(
+            (e) =>
+              e.organizationId === org.id &&
+              (!q || [e.description, e.ticket, e.project?.name].some((v) => v?.toLowerCase().includes(q))),
+          );
+        return {
+          type: "list",
+          searchPlaceholder: "Search entries",
+          searchText: text,
+          accessory: several ? org.name : undefined,
+          sections: byDay(found),
+          emptyView: q
+            ? {
+                icon: "List",
+                title: "No matching entries",
+                description: "Recent Entries shows the last 14 days.",
+              }
+            : undefined,
+          ...rest,
+        };
+      }
+
+      const failure = (message, action) => ({
+        style: "failure",
+        title: "Couldn't load entries",
+        message,
+        primaryAction: action && { title: action },
+      });
+
+      const long = {
+        ...running,
+        id: "long",
+        description: "Rework the onboarding checklist so new members see their first project and team before the timer",
+        ticket: "WEB-140",
+        stoppedAt: new Date(Fixtures.NOW.getTime() - 120 * MIN).toISOString(),
+        startedAt: new Date(Fixtures.NOW.getTime() - 135 * MIN).toISOString(),
+      };
+
+      Raycast.prototype({
+        title: "Recent Entries",
+        notes: [
+          "Every entry of the last 14 days is its own row, repeats included, grouped by day with the day's total. Typing filters by description, ticket, and project.",
+          "↵ starts an entry again as a new timer; on the running entry it stops the timer. ⌘↵ opens the timer form prefilled, to change it first.",
+          "Hover a duration to see the entry's start and end.",
+        ],
+        states: {
+          Loading: () => list({ isLoading: true, sections: [] }),
+          Entries: () => list(),
+          "One organization": () => list({ several: false }),
+          Searching: () => list({ text: "inbox" }),
+          "No matches": () => list({ text: "budget" }),
+          "Long description": () => list({ extra: [long] }),
+          "No entries": () =>
+            list({
+              org: { ...orgs.harbor, id: "none" },
+              emptyView: {
+                icon: "Clock",
+                title: "No entries in the last 14 days",
+                description: "Start a timer, and it shows here.",
+                actions: [{ title: "Start Timer", icon: "Play" }],
+              },
+            }),
+          "Edit and Start": () => ({
+            type: "form",
+            navigationTitle: "Edit and Start",
+            back: true,
+            fields: [
+              { type: "textfield", title: "Description", value: "Inbox triage", focused: true },
+              {
+                type: "textfield",
+                title: "Ticket",
+                value: "OPS-7",
+                placeholder: "ABC-123",
+                info: "Left empty, a ticket key in the description, such as ABC-123, becomes the ticket.",
+              },
+              {
+                type: "dropdown",
+                title: "Project",
+                value: projects.internal.name,
+                icon: "CircleFilled",
+                iconColor: "var(--muted)",
+                info: "Remembered for the next timer. Changing the organization clears it.",
+              },
+              { type: "separator" },
+              { type: "dropdown", title: "Organization", value: orgs.northwind.name, icon: "Building" },
+            ],
+            actions: [{ title: "Start Timer", icon: "Play", goto: "Started again" }],
+          }),
+          "Started again": () => ({ type: "hud", title: "Started “Inbox triage” on OPS-7" }),
+          "Started again, stopping another": () => ({
+            type: "hud",
+            title: `Started “Inbox triage” and stopped “${running.description}” at ${format.duration(running)}`,
+          }),
+          Stopped: () => ({
+            type: "hud",
+            title: `Stopped “${running.description}” at ${format.duration(running)}`,
+          }),
+          "Error: key not valid (401)": () =>
+            list({
+              sections: [],
+              toast: failure("Invalid API key.", "Open Extension Preferences"),
+              emptyView: {
+                icon: "Key",
+                title: "Invalid API key",
+                description: "Check the API key in the extension's preferences.",
+                actions: [{ title: "Open Extension Preferences", icon: "Gear" }],
+              },
+            }),
+          "Error: read-only key on Start Again (403)": () =>
+            list({
+              toast: {
+                style: "failure",
+                title: "Couldn't start timer",
+                message: "API key is read-only.",
+                primaryAction: { title: "Open Snowtime Settings" },
+              },
+            }),
+          "Error: no connection": () =>
+            list({
+              sections: [],
+              toast: failure("Can't reach snowtime.snowhound.eu.", "Open Extension Preferences"),
+              emptyView: {
+                icon: "WifiDisabled",
+                title: "Can't reach snowtime.snowhound.eu",
+                description: "Check your connection or the instance URL in the extension's preferences.",
+                actions: [
+                  { title: "Refresh", icon: "ArrowClockwise" },
+                  { title: "Open Extension Preferences", icon: "Gear" },
+                ],
+              },
+            }),
+          "Cached while refreshing": () =>
+            list({ isLoading: true, toast: { style: "animated", title: "Refreshing…" } }),
+        },
+        initial: "Entries",
+      });
+    </script>
+  </body>
+</html>

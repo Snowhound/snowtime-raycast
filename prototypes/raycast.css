@@ -227,10 +227,15 @@ kbd {
 }
 
 .row .title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .row .subtitle {
+  flex: 0 1000 auto;
+  min-width: 0;
   overflow: hidden;
   color: var(--muted);
   text-overflow: ellipsis;
@@ -239,6 +244,7 @@ kbd {
 
 .row .accessories {
   display: flex;
+  flex: none;
   gap: 12px;
   margin-left: auto;
   align-items: center;
