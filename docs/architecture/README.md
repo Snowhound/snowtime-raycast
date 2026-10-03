@@ -76,7 +76,9 @@ status, code, and message, and the commands show it as a failure toast:
 | Any other        | The API's message                                   | None                       |
 
 The extension shows the API's message instead of writing its own, so the words are the
-same in every client.
+same in every client. A request unanswered after 15 seconds counts as no answer. Open
+Snowtime Settings opens the organization's settings page, `<instanceUrl>/<slug>/settings`,
+where the API keys are.
 
 ## Organizations
 

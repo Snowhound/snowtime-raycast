@@ -9,6 +9,9 @@
     "Productivity"
   ],
   "license": "MIT",
+  "platforms": [
+    "macOS"
+  ],
   "commands": [
     {
       "name": "index",
@@ -17,9 +20,51 @@
       "mode": "view"
     }
   ],
+  "preferences": [
+    {
+      "name": "instanceUrl",
+      "title": "Instance URL",
+      "description": "The address of your Snowtime, such as https://snowtime.snowhound.eu.",
+      "type": "textfield",
+      "required": true,
+      "default": "https://snowtime.snowhound.eu",
+      "placeholder": "https://snowtime.snowhound.eu"
+    },
+    {
+      "name": "apiKey",
+      "title": "API Key",
+      "description": "A personal API key. Create one in Snowtime under Settings → API keys: a read key shows your entries and timer, a write key also starts and stops timers.",
+      "type": "password",
+      "required": true,
+      "placeholder": "snow_…"
+    },
+    {
+      "name": "suggestionRange",
+      "title": "Suggestions From",
+      "description": "How far back Start Timer looks for entries to suggest.",
+      "type": "dropdown",
+      "required": false,
+      "default": "2",
+      "data": [
+        {
+          "title": "Today and yesterday",
+          "value": "2"
+        },
+        {
+          "title": "Last 7 days",
+          "value": "7"
+        },
+        {
+          "title": "Last 14 days",
+          "value": "14"
+        }
+      ]
+    }
+  ],
   "dependencies": {
     "@raycast/api": "^2.6.2",
-    "@raycast/utils": "^2.3.2"
+    "@raycast/utils": "^2.3.2",
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.2.0",
@@ -27,7 +72,8 @@
     "@types/react": "19.0.10",
     "eslint": "^10.12.0",
     "prettier": "^3.9.9",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
   },
   "scripts": {
     "build": "ray build",
@@ -35,6 +81,7 @@
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
     "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
-    "publish": "npx @raycast/api@latest publish"
+    "publish": "npx @raycast/api@latest publish",
+    "test": "vitest run"
   }
 }

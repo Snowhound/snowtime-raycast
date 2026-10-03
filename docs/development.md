@@ -37,5 +37,6 @@ Snowtime. The prototypes are checked by agents first (`docs/skills/ui-review/SKI
 | `npm run dev`      | Runs the extension in Raycast and rebuilds it on save     |
 | `npm run build`    | Builds the extension as the Store will                    |
 | `npm run lint`     | `ray lint`: the manifest, the icons, ESLint, and Prettier |
+| `npm test`         | Vitest on `src/api/` and `src/lib/`, in Europe/Tallinn    |
 | `npm run fix-lint` | `ray lint --fix`                                          |
 | `npm run publish`  | Opens the pull request to `raycast/extensions` (task 004) |
