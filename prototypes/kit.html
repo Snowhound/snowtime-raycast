@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kit · Snowtime for Raycast</title>
+    <link rel="stylesheet" href="raycast.css" />
+    <script src="fixtures.js"></script>
+    <script src="raycast.js"></script>
+  </head>
+  <body>
+    <script>
+      // Every view type and state the engine draws, with neutral content. Check the engine
+      // here before building a command's prototype on it.
+      const { entries, format } = Fixtures;
+
+      const rowActions = [
+        { title: "Primary Action", icon: "Play" },
+        { title: "Secondary Action", icon: "CopyClipboard" },
+        { title: "Open in Browser", icon: "Globe", shortcut: "cmd+o", section: "More" },
+        { title: "Delete Item", icon: "Stop", shortcut: "ctrl+x", style: "destructive", section: "More" },
+      ];
+
+      const items = entries.slice(1, 5).map((e) => ({
+        icon: "Clock",
+        title: e.description,
+        subtitle: e.project?.name,
+        accessories: [{ tag: e.ticket ?? "No ticket" }, { text: format.duration(e), icon: "Clock" }],
+        actions: rowActions,
+      }));
+
+      const list = {
+        type: "list",
+        searchPlaceholder: "Search items",
+        accessory: "Dropdown",
+        sections: [
+          { title: "Section", subtitle: "2 items", items: items.slice(0, 2) },
+          { title: "Another Section", items: items.slice(2) },
+        ],
+      };
+
+      const fields = [
+        { type: "dropdown", title: "Dropdown", value: "Selected option", icon: "Building" },
+        { type: "textfield", title: "Text Field", placeholder: "Placeholder text", focused: true },
+        { type: "textfield", title: "With Value", value: "A value", info: "An info line under the field." },
+        { type: "separator" },
+        { type: "textarea", title: "Text Area", placeholder: "Longer text" },
+        { type: "description", text: "Form.Description: a line of explanation." },
+      ];
+
+      Raycast.prototype({
+        title: "Engine kit",
+        notes: [
+          "Arrow keys move the selection, ⌘K opens the action panel, Esc closes it, ↵ and ⌘↵ run the first two actions.",
+          "Hover a control or an icon to see the Raycast component or Icon it stands for.",
+        ],
+        states: {
+          List: () => list,
+          "List: loading": () => ({ ...list, sections: [], isLoading: true }),
+          "List: empty": () => ({
+            ...list,
+            sections: [],
+            emptyView: {
+              icon: "List",
+              title: "Empty View Title",
+              description: "One sentence that says what to do next.",
+              actions: rowActions.slice(0, 1),
+            },
+          }),
+          "List: success toast": () => ({
+            ...list,
+            toast: { style: "success", title: "Done", message: "What happened" },
+          }),
+          "List: failure toast": () => ({
+            ...list,
+            toast: { style: "failure", title: "Failed", message: "Why it failed" },
+          }),
+          "List: animated toast": () => ({ ...list, toast: { style: "animated", title: "Working…" } }),
+          Form: () => ({
+            type: "form",
+            navigationTitle: "Form Title",
+            fields,
+            actions: [{ title: "Submit", icon: "Checkmark" }],
+          }),
+          "Form: validation": () => ({
+            type: "form",
+            navigationTitle: "Form Title",
+            fields: [{ ...fields[1], focused: false, error: "An error message" }, ...fields.slice(2)],
+            actions: [{ title: "Submit", icon: "Checkmark" }],
+          }),
+          HUD: () => ({ type: "hud", title: "A short confirmation" }),
+          "Menu bar: closed": () => ({ type: "menubar", title: "1:37" }),
+          "Menu bar: open": () => ({
+            type: "menubar",
+            title: "1:37",
+            open: true,
+            sections: [
+              { items: [{ icon: "Clock", title: "Item title", subtitle: "Subtitle" }] },
+              {
+                title: "Section",
+                items: [
+                  { icon: "Stop", title: "Action Item", shortcut: "cmd+s" },
+                  { icon: "Play", title: "Another Item" },
+                ],
+              },
+            ],
+          }),
+        },
+      });
+    </script>
+  </body>
+</html>
