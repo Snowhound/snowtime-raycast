@@ -3,12 +3,16 @@ import { ApiError, NO_ANSWER } from "./errors";
 import { showApiFailure } from "./toast";
 
 const raycast = vi.hoisted(() => ({
+  environment: { commandMode: "view" },
+  showHUD: vi.fn(),
   open: vi.fn(),
   openExtensionPreferences: vi.fn(),
   showFailureToast: vi.fn(),
 }));
 
 vi.mock("@raycast/api", () => ({
+  environment: raycast.environment,
+  showHUD: raycast.showHUD,
   getPreferenceValues: () => ({ instanceUrl: "https://snowtime.example.com/" }),
   open: raycast.open,
   openExtensionPreferences: raycast.openExtensionPreferences,
@@ -23,7 +27,10 @@ function toastOf(error: unknown, organizationSlug?: string) {
   return raycast.showFailureToast.mock.calls[0][1];
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  raycast.environment.commandMode = "view";
+});
 
 describe("showApiFailure", () => {
   test("401 shows the API's message and opens the extension's preferences", () => {
@@ -80,5 +87,12 @@ describe("showApiFailure", () => {
     raycast.showFailureToast.mockClear();
     showApiFailure(error, { title });
     expect(raycast.showFailureToast).toHaveBeenCalledWith(error, { title });
+  });
+
+  test("the menu bar shows a HUD, having no window for a toast", async () => {
+    raycast.environment.commandMode = "menu-bar";
+    await showApiFailure(new ApiError(403, "FORBIDDEN", "API key is read-only.", "POST"), { title });
+    expect(raycast.showHUD).toHaveBeenCalledWith("Couldn't start timer: API key is read-only.");
+    expect(raycast.showFailureToast).not.toHaveBeenCalled();
   });
 });

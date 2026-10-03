@@ -54,7 +54,8 @@
         items: [
           { icon: "Globe", title: "Open Snowtime", shortcut: "cmd+o" },
           { icon: "ArrowClockwise", title: "Refresh", shortcut: "cmd+r" },
-          { icon: "Gear", title: "Configure Extension…", shortcut: "cmd+," },
+          // No ⌘,: Raycast reserves it for its own preferences.
+          { icon: "Gear", title: "Configure Extension…" },
         ],
       };
 
@@ -67,7 +68,8 @@
           items: [
             { ...dot(entry), title: format.label(entry), tooltip: format.label(entry) },
             { info: true, title: details },
-            { info: true, title: `Since ${format.time(entry.startedAt)}`, subtitle: format.duration(entry) },
+            // No duration: the title shows it.
+            { info: true, title: `Since ${format.time(entry.startedAt)}` },
             { icon: "Stop", title: "Stop Timer", shortcut: "cmd+s", goto: "Stopped" },
           ],
         };

@@ -47,6 +47,24 @@
           "required": false
         }
       ]
+    },
+    {
+      "name": "running-timer",
+      "title": "Running Timer",
+      "description": "Show the running timer's elapsed time in the menu bar, and stop it or start another.",
+      "mode": "menu-bar",
+      "interval": "1m",
+      "preferences": [
+        {
+          "name": "showStartAgain",
+          "title": "Show Start Again",
+          "label": "Show recent entries to start again",
+          "description": "Lists five recent entries in the menu, to start one again with ⌘1–⌘5.",
+          "type": "checkbox",
+          "default": true,
+          "required": false
+        }
+      ]
     }
   ],
   "preferences": [

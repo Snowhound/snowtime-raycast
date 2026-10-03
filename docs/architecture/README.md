@@ -122,19 +122,35 @@ task 082, README point 4). Instead:
 
 - A command that starts or stops a timer writes the result to a `Cache` entry and
   refreshes the menu bar with `launchCommand` in the background, so the menu bar changes at
-  once.
+  once. A stop clears the cache before its request, and puts the timer back if the request
+  fails, so the menu bar doesn't wait for the API.
+- Such a refresh passes `fromCache` in its launch context, and the menu bar then shows the
+  cache without reading the API: a read before the stop finished would bring the timer back.
+- The menu's Start Again, Stop Timer, and Refresh run in the menu's own run and keep
+  `isLoading` true until they finish, so Raycast doesn't unload the command when the click
+  closes the menu. The menu shows the result itself: a command can't launch itself, so the
+  refresh Start and Stop ask for doesn't reach it. In the menu bar, failures show as a HUD,
+  since there is no window for a toast.
 - A background run reads the cache and counts the elapsed time; every fifth run reads the
-  API instead.
-- Opening the menu reads the API, because Raycast runs the command when the user clicks it.
+  timer and the Start Again entries from the API instead. A run reads the API too when
+  nothing is cached yet.
+- Opening the menu, and running Running Timer from Raycast's search, show the cache and
+  send no request (decided 2026-10-03). Raycast opens the menu as the previous run drew it
+  and doesn't redraw it while it is open, so a read on opening could only change the title
+  under an unchanged menu. Opening and closing the menu a few times would also reach the
+  API's rate limit, as each read of the Start Again entries is three requests.
 
-A timer started or stopped in the web app then shows in the menu bar within 5 minutes, or
-at once when the menu opens. That is 288 background requests a day per user. If point 4
-makes requests cheap, the menu bar can read the API every minute.
+A timer started or stopped in the web app then shows in the menu bar within 5 minutes.
+That is 288 background requests a day per user for the timer, and as many reads of the
+Start Again entries. If point 4 makes requests cheap, the menu bar can read the API every
+minute.
 
-Refreshing on request covers the time between: the menu has a Refresh item (`⌘R`), and
-running Running Timer from Raycast's search refreshes it too, since Raycast then launches it
-as the user's own run. Recent Entries has a Refresh action (`⌘R`) as well. A separate
-refresh command would only repeat the second, so there is none.
+Refreshing on request covers the time between: the menu has a Refresh item (`⌘R`), which
+reads the timer and the Start Again entries and shows them at once. A menu reopened
+before the API answers still shows the old state, as the cache changes only with the
+answer; that is accepted (decided 2026-10-03), and the next open shows it. Recent Entries has a
+Refresh action (`⌘R`) as well. A separate refresh command would only repeat the menu's
+Refresh, so there is none.
 
 ## Starting and continuing
 

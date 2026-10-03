@@ -1,4 +1,4 @@
-import { PopToRootType, showHUD, showToast, Toast } from "@raycast/api";
+import { environment, PopToRootType, showHUD, showToast, Toast } from "@raycast/api";
 import { api, type Organization, type Project } from "../api";
 import { showApiFailure } from "../api/toast";
 import { startedHud } from "../lib/hud";
@@ -16,7 +16,11 @@ export interface NewTimer {
 // for the next form, shows it in the menu bar, and closes Raycast with a HUD. A failure
 // stays in the view as a toast. Answers whether the timer started.
 export async function startTimer(organization: Organization, timer: NewTimer) {
-  const toast = await showToast({ style: Toast.Style.Animated, title: "Starting timer…" });
+  // The menu bar has no window for a toast.
+  const toast =
+    environment.commandMode === "menu-bar"
+      ? undefined
+      : await showToast({ style: Toast.Style.Animated, title: "Starting timer…" });
   try {
     const { started, stopped } = await api().startTimer(organization.id, {
       id: newEntryId(),
@@ -27,11 +31,11 @@ export async function startTimer(organization: Organization, timer: NewTimer) {
     await rememberStart(organization.id, timer.project?.id ?? null);
     cacheTimer({ ...started, project: timer.project });
     await refreshMenuBar();
-    await toast.hide();
+    await toast?.hide();
     await showHUD(startedHud(started, stopped), { clearRootSearch: true, popToRootType: PopToRootType.Immediate });
     return true;
   } catch (error) {
-    await toast.hide();
+    await toast?.hide();
     await showApiFailure(error, { title: "Couldn't start timer", organizationSlug: organization.slug });
     return false;
   }
