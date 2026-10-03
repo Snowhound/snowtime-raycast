@@ -18,6 +18,12 @@
       "title": "Start Timer",
       "description": "Start a timer, from a recent entry or a new description.",
       "mode": "view"
+    },
+    {
+      "name": "stop-timer",
+      "title": "Stop Timer",
+      "description": "Stop the running timer.",
+      "mode": "no-view"
     }
   ],
   "preferences": [
