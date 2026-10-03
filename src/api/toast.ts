@@ -1,5 +1,6 @@
 import { getPreferenceValues, open, openExtensionPreferences, Toast } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
+import { siteUrl } from "./client";
 import { ApiError, NO_ANSWER } from "./errors";
 
 interface Options {
@@ -11,9 +12,12 @@ interface Options {
 
 // Shows a failed request as the failure toast of docs/architecture/README.md, "Errors":
 // the API's message, with the action that fixes it.
-export function showApiFailure(error: unknown, { title, organizationSlug }: Options) {
-  if (!(error instanceof ApiError)) return showFailureToast(error, { title });
-  return showFailureToast(error, {
+export async function showApiFailure(error: unknown, { title, organizationSlug }: Options): Promise<void> {
+  if (!(error instanceof ApiError)) {
+    await showFailureToast(error, { title });
+    return;
+  }
+  await showFailureToast(error, {
     title,
     message: messageOf(error),
     primaryAction: actionOf(error, organizationSlug),
@@ -39,7 +43,6 @@ function actionOf(error: ApiError, organizationSlug?: string): Toast.ActionOptio
 }
 
 function settingsUrl(organizationSlug?: string) {
-  const { instanceUrl } = getPreferenceValues<Preferences>();
-  const base = instanceUrl.trim().replace(/\/+$/, "");
+  const base = siteUrl(getPreferenceValues<Preferences>().instanceUrl);
   return organizationSlug ? `${base}/${encodeURIComponent(organizationSlug)}/settings` : base;
 }

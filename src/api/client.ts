@@ -18,8 +18,13 @@ export function hostOf(instanceUrl: string) {
   }
 }
 
+// The instance's address without a trailing slash, for its pages.
+export function siteUrl(instanceUrl: string) {
+  return instanceUrl.trim().replace(/\/+$/, "");
+}
+
 export function baseUrl(instanceUrl: string) {
-  return `${instanceUrl.trim().replace(/\/+$/, "")}/api/v1`;
+  return `${siteUrl(instanceUrl)}/api/v1`;
 }
 
 export function createClient(config: ClientConfig, fetchFn: typeof fetch = fetch) {

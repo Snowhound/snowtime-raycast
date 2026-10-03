@@ -133,11 +133,15 @@ refresh command would only repeat the second, so there is none.
 ## Starting and continuing
 
 Start Timer is a list whose search bar is the description (decided 2026-10-03). Raycast's
-`Form.TextField` can't suggest values, and a list can, with Raycast's own filtering:
+`Form.TextField` can't suggest values, and a list can:
 
 - Its rows are suggestions: the user's entries in the chosen organization since the start
   of the range `suggestionRange` sets, one row per description, ticket, and project at its
   newest entry, grouped by day. Typing filters them by description, ticket, and project.
+  The list filters them itself instead of with Raycast's fuzzy filtering, so it knows
+  whether anything matched and can title the New timer row's section only then.
+- A suggestion whose project has since been archived or deleted starts without one, as the
+  API refuses a timer on an inactive project.
 - ↵ on a suggestion starts a new timer with its description, ticket, and project at once.
   ⌘↵ (Edit and Start) pushes the timer form, prefilled from it.
 - While the user types, a last row, New timer, holds the typed text. With no match it is
