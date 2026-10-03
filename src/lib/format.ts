@@ -1,15 +1,23 @@
-// Times, days, and durations in en-US, in the Mac's time zone (docs/architecture/README.md,
-// "Language and formats"). The API doesn't send the user's Snowtime time zone, so a day is
-// the Mac's day.
+// Times, days, and durations in en-US, in the Mac's time zone and in 12- or 24-hour time as
+// the Time Format preference chooses (docs/architecture/README.md, "Language and formats"). The API doesn't send the
+// user's Snowtime time zone, so a day is the Mac's day.
+
+import type { HourCycle } from "./clock";
+import { preferredHourCycle } from "./time-format";
 
 const MINUTE = 60_000;
 
-const timeFormat = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
+const timeFormats = new Map<HourCycle, Intl.DateTimeFormat>();
 const dayFormat = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric" });
 
-// "9:30 AM"
-export function formatTime(iso: string) {
-  return timeFormat.format(new Date(iso));
+// "9:30 AM", or "09:30" in 24-hour time.
+export function formatTime(iso: string, hourCycle = preferredHourCycle()) {
+  let format = timeFormats.get(hourCycle);
+  if (!format) {
+    format = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hourCycle });
+    timeFormats.set(hourCycle, format);
+  }
+  return format.format(new Date(iso));
 }
 
 // "Today", "Yesterday", or "Monday, Oct 5".

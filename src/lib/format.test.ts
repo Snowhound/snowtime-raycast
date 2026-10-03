@@ -9,6 +9,12 @@ test("formatTime is en-US in the Mac's zone", () => {
   expect(formatTime("2026-10-05T12:30:00.000Z")).toBe("3:30 PM");
 });
 
+test("formatTime writes 24-hour time", () => {
+  expect(formatTime("2026-10-05T06:05:00.000Z", "h23")).toBe("09:05");
+  expect(formatTime("2026-10-05T18:30:00.000Z", "h23")).toBe("21:30");
+  expect(formatTime("2026-10-04T21:00:00.000Z", "h23")).toBe("00:00");
+});
+
 describe("formatDay", () => {
   test("names today and yesterday, and other days by weekday and date", () => {
     expect(formatDay("2026-10-05T06:00:00.000Z", now)).toBe("Today");

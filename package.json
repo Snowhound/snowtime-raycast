@@ -106,6 +106,28 @@
           "value": "14"
         }
       ]
+    },
+    {
+      "name": "timeFormat",
+      "title": "Time Format",
+      "description": "How times show, such as when a timer started.",
+      "type": "dropdown",
+      "required": false,
+      "default": "system",
+      "data": [
+        {
+          "title": "System Default",
+          "value": "system"
+        },
+        {
+          "title": "12-hour",
+          "value": "12-hour"
+        },
+        {
+          "title": "24-hour",
+          "value": "24-hour"
+        }
+      ]
     }
   ],
   "dependencies": {

@@ -39,13 +39,14 @@ tests reach it.
 ## Sign-in and preferences
 
 The extension signs in with a personal API key that the user creates in Snowtime under
-Settings → API keys. Three extension preferences, which every command shares:
+Settings → API keys. Four extension preferences, which every command shares:
 
 | Preference        | Type        | Required | Default                         |
 | ----------------- | ----------- | -------- | ------------------------------- |
 | `instanceUrl`     | `textfield` | Yes      | `https://snowtime.snowhound.eu` |
 | `apiKey`          | `password`  | Yes      | None                            |
 | `suggestionRange` | `dropdown`  | No       | Today and yesterday             |
+| `timeFormat`      | `dropdown`  | No       | System Default                  |
 
 - Raycast asks for required preferences before a command first runs, and stores a
   `password` preference encrypted. The Store forbids a separate setup command, and an
@@ -208,6 +209,12 @@ Raycast supports only US English, so the extension does too, and doesn't transla
 
 - Times and dates use `en-US` formats in the Mac's time zone (`9:30 AM`, `Monday, Oct 5`).
   The API doesn't send the user's Snowtime time zone, so a day is the Mac's day.
+- Times are 12- or 24-hour as the `timeFormat` preference (Time Format) chooses: System
+  Default, 12-hour, or 24-hour (`09:30`; decided 2026-10-03). System Default takes the hour
+  cycle of the locale the extension runs in, from `Intl`, which in Raycast follows the Mac's
+  region (checked 2026-10-03). Extensions in `raycast/extensions` that offer the choice do it
+  this way, as `in-the-time-zone` does; none reads macOS's settings. The tests pin 12-hour
+  time (`vitest.setup.ts`).
 - Durations are `h:mm`, as in the menu bar.
 - A description is optional, so an entry is named as Snowtime's `entryLabel` names it
   (`src/features/timer/entries.ts` there): by its description, else its ticket, else "No
