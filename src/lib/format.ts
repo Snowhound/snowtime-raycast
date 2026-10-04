@@ -44,8 +44,9 @@ export function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-// The last `days` days up to the end of today, for GET /api/v1/orgs/:orgId/entries. Days
-// are calendar days, so a day with a daylight saving change still starts at midnight.
+// The last `days` days up to the end of today, for
+// GET /api/v1/organizations/:orgId/entries. Days are calendar days, so a day with a daylight
+// saving change still starts at midnight.
 export function lastDays(days: number, now = new Date()) {
   const today = startOfDay(now);
   return {

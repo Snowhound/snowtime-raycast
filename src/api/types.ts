@@ -21,10 +21,18 @@ export interface Me {
   organizations: Organization[];
 }
 
+// A project as the running timer carries it.
 export interface Project {
   id: string;
   name: string;
   color: string | null;
+}
+
+// A project as GET /api/v1/organizations/:orgId/projects lists it.
+export interface ListedProject extends Project {
+  archivedAt: string | null;
+  teamIds: string[];
+  hasEntries: boolean;
 }
 
 // A running entry has `stoppedAt: null`.

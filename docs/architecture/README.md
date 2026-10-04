@@ -70,9 +70,11 @@ Settings → API keys. Four extension preferences, which every command shares:
 
 ## Errors
 
-The API answers `{ "error": { "code", "message" } }`, with an English message
-(`docs/api.md`, "Errors"). `src/api/` turns every failure into one `ApiError` with the
-status, code, and message, and the commands show it as a failure toast:
+A refusal of the API's rules answers `{ "error": { "code", "key" } }`, where the key, such
+as `timer_not_running`, names the message. A refusal of the key itself and invalid input
+answer an English `message` instead (`docs/api.md`, "Errors"). `src/api/` turns every
+failure into one `ApiError` with the status, code, key, and message, and the commands show
+it as a failure toast:
 
 | Answer           | Toast message                                       | Action on the toast        |
 | ---------------- | --------------------------------------------------- | -------------------------- |
@@ -80,10 +82,13 @@ status, code, and message, and the commands show it as a failure toast:
 | `403` on a write | The API's message (`API key is read-only.`)         | Open Snowtime Settings     |
 | `429`            | The API's message, and the wait `Retry-After` gives | None                       |
 | No answer        | `Can't reach <host>.`                               | Open Extension Preferences |
-| Any other        | The API's message                                   | None                       |
+| Any other        | The key's message, or else the API's message        | None                       |
 
-The extension shows the API's message instead of writing its own, so the words are the
-same in every client. A request unanswered after 15 seconds counts as no answer. Open
+The extension words a key as the web app does: `src/api/errors.ts` copies the English text
+of each key its calls can answer from `errorMessages` in the Snowtime repository's
+`src/server/errors.ts`. A key added after that copy falls back to
+`Snowtime answered <status>.`, so update the copy when Snowtime adds a key the extension's
+calls can answer. A request unanswered after 15 seconds counts as no answer. Open
 Snowtime Settings opens the organization's settings page, `<instanceUrl>/<slug>/settings`,
 where the API keys are.
 
@@ -103,11 +108,11 @@ works in one at a time:
 
 ## Starting a timer
 
-The extension generates the entry's id as a UUID v7, as `POST /api/v1/orgs/:orgId/timer`
-asks. When a start gets no answer, it retries once with the same id. If the retry answers
-`409`, the first request may have succeeded, so the extension reads `GET /api/v1/timer`: a
-running entry with that id counts as started. It doesn't match the message text, which the
-API may change.
+The extension generates the entry's id as a UUID v7, as
+`POST /api/v1/organizations/:orgId/timer/start` asks. When a start gets no answer, it
+retries once with the same id. If the retry answers `409`, the first request may have
+succeeded, so the extension reads `GET /api/v1/timer`: a running entry with that id counts
+as started. It doesn't match the refusal's key, since a `409` has more than one cause.
 
 ## The menu bar
 
@@ -164,9 +169,9 @@ Start Timer is a list whose search bar is the description (decided 2026-10-03). 
   The list filters them itself instead of with Raycast's fuzzy filtering, so it knows
   whether anything matched and can title the New timer row's section only then.
 - An entry whose project has since been archived or deleted starts again without one, as
-  the API refuses a timer on an inactive project. `GET /api/v1/orgs/:orgId/projects` lists
-  only active projects, so Recent Entries can't name such a project and says "Archived
-  project".
+  the API refuses a timer on an inactive project.
+  `GET /api/v1/organizations/:orgId/projects` lists only active projects, so Recent Entries
+  can't name such a project and says "Archived project".
 - ↵ on a suggestion starts a new timer with its description, ticket, and project at once.
   ⌘↵ (Edit and Start) pushes the timer form, prefilled from it.
 - While the user types, a last row, New timer, holds the typed text. With no match it is
@@ -190,7 +195,7 @@ while (decided 2026-10-03):
   and when Continue Timer has no entry to continue. A prefilled entry's own project wins.
 - Changing the organization clears the saved project, and the form falls back to No
   project. So does a saved project the organization has since archived or deleted, because
-  `GET /api/v1/orgs/:orgId/projects` lists only active ones.
+  `GET /api/v1/organizations/:orgId/projects` lists only active ones.
 - The Project field's `info` says the choice is remembered.
 
 ## Tickets from the description

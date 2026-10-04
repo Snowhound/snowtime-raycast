@@ -32,8 +32,8 @@ export async function rememberStart(organizationId: string, projectId: string | 
 }
 
 // The remembered project, if it belongs to the organization and the organization still
-// lists it: GET /api/v1/orgs/:orgId/projects lists only active projects, so an archived or
-// deleted one falls back to no project.
+// lists it: GET /api/v1/organizations/:orgId/projects lists only active projects, so an
+// archived or deleted one falls back to no project.
 export async function rememberedProject<T extends { id: string }>(organizationId: string, projects: T[]) {
   const [org, projectId] = await Promise.all([
     LocalStorage.getItem<string>(ORGANIZATION),

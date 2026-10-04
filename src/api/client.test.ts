@@ -17,7 +17,13 @@ function json(status: number, body: unknown, headers: Record<string, string> = {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
 }
 
-function refusal(status: number, code: string, message: string, headers?: Record<string, string>) {
+// A refusal of the app's rules, which names its message by key.
+function refusal(status: number, code: string, key: string) {
+  return json(status, { error: { code, key } });
+}
+
+// A refusal of the key itself, which carries its message.
+function keyRefusal(status: number, code: string, message: string, headers?: Record<string, string>) {
   return json(status, { error: { code, message } }, headers);
 }
 
@@ -63,14 +69,14 @@ describe("requests", () => {
     const fetchFn = fake(json(200, { started: entry, stopped: null }));
     await client(fetchFn).startTimer("org 1", { id: entry.id, description: "Landing page" });
     const [url, init] = fetchFn.mock.calls[0];
-    expect(url).toBe("https://snowtime.example.com/api/v1/orgs/org%201/timer");
+    expect(url).toBe("https://snowtime.example.com/api/v1/organizations/org%201/timer/start");
     expect(init?.method).toBe("POST");
     expect(new Headers(init?.headers).get("content-type")).toBe("application/json");
     expect(JSON.parse(init?.body as string)).toEqual({ id: entry.id, description: "Landing page" });
   });
 
   test("send a range as ISO 8601 query parameters", async () => {
-    const fetchFn = fake(json(200, { entries: [entry] }));
+    const fetchFn = fake(json(200, [entry]));
     const entries = await client(fetchFn).entries("org-1", {
       from: new Date("2026-10-01T00:00:00Z"),
       to: new Date("2026-10-02T00:00:00Z"),
@@ -78,7 +84,7 @@ describe("requests", () => {
     });
     expect(entries).toEqual([entry]);
     const url = new URL(fetchFn.mock.calls[0][0] as string);
-    expect(url.pathname).toBe("/api/v1/orgs/org-1/entries");
+    expect(url.pathname).toBe("/api/v1/organizations/org-1/entries");
     expect(Object.fromEntries(url.searchParams)).toEqual({
       from: "2026-10-01T00:00:00.000Z",
       to: "2026-10-02T00:00:00.000Z",
@@ -86,36 +92,61 @@ describe("requests", () => {
     });
   });
 
-  test("unwrap each answer", async () => {
+  test("return each answer", async () => {
     const project = { id: "project-1", name: "Website redesign", color: null };
-    expect(await client(fake(json(200, { timer: null }))).timer()).toBeNull();
-    expect(await client(fake(json(200, { timer: { ...entry, project } }))).timer()).toEqual({ ...entry, project });
-    expect(await client(fake(json(200, { projects: [project] }))).projects("org-1")).toEqual([project]);
+    expect(await client(fake(json(200, null))).timer()).toBeNull();
+    expect(await client(fake(json(200, { ...entry, project }))).timer()).toEqual({ ...entry, project });
 
-    const stop = fake(json(200, { stopped: entry }));
-    expect(await client(stop).stopTimer(entry.id)).toEqual(entry);
-    expect(stop.mock.calls[0][0]).toBe(`https://snowtime.example.com/api/v1/timer/${entry.id}/stop`);
-    expect(stop.mock.calls[0][1]?.body).toBeUndefined();
+    const listed = { ...project, archivedAt: null, teamIds: [], hasEntries: true };
+    const projects = fake(json(200, [listed]));
+    expect(await client(projects).projects("org-1")).toEqual([listed]);
+    expect(projects.mock.calls[0][0]).toBe("https://snowtime.example.com/api/v1/organizations/org-1/projects");
+  });
+
+  test("stop names the entry in the body", async () => {
+    const stop = fake(json(200, { ...entry, stoppedAt: "2026-10-03T08:00:00.000Z" }));
+    expect((await client(stop).stopTimer(entry.id)).stoppedAt).toBe("2026-10-03T08:00:00.000Z");
+    expect(stop.mock.calls[0][0]).toBe("https://snowtime.example.com/api/v1/timer/stop");
+    expect(stop.mock.calls[0][1]?.method).toBe("POST");
+    expect(JSON.parse(stop.mock.calls[0][1]?.body as string)).toEqual({ id: entry.id });
   });
 });
 
 describe("errors", () => {
   test.each([
+    [403, "FORBIDDEN", "not_organization_member", "You are not a member of this organization."],
+    [404, "NOT_FOUND", "timer_not_running", "This timer is not running."],
+    [409, "CONFLICT", "project_archived", "The project is archived."],
+    [422, "LIMIT_REACHED", "entry_limit", "You have too many entries around this time. Delete some first."],
+    [429, "RATE_LIMITED", "rate_limited", "Too many changes in a short time. Wait a minute and try again."],
+    [503, "UNAVAILABLE", "database_unavailable", "Snowtime is down for maintenance. Try again in a few minutes."],
+  ])("%i %s %s keeps the status, code, and key, with the key's message", async (status, code, key, message) => {
+    const error = await failureOf(client(fake(refusal(status, code, key))).stopTimer(entry.id));
+    expect(error).toMatchObject({ status, code, key, message, method: "POST", retryAfter: null });
+  });
+
+  test.each([
     [401, "UNAUTHENTICATED", "Invalid API key."],
     [403, "FORBIDDEN", "API key is read-only."],
-    [404, "NOT_FOUND", "Entry not found."],
-    [409, "CONFLICT", "Project is archived."],
-    [422, "INVALID", "Description is too long."],
-    [422, "LIMIT_REACHED", "Too many entries."],
-    [500, "INTERNAL", "Something went wrong."],
-    [503, "UNAVAILABLE", "Snowtime is unavailable."],
-  ])("%i %s keeps the status, code, and message", async (status, code, message) => {
-    const error = await failureOf(client(fake(refusal(status, code, message))).stopTimer(entry.id));
-    expect(error).toMatchObject({ status, code, message, method: "POST", retryAfter: null });
+  ])("%i %s from the key keeps the API's message", async (status, code, message) => {
+    const error = await failureOf(client(fake(keyRefusal(status, code, message))).stopTimer(entry.id));
+    expect(error).toMatchObject({ status, code, message, key: null });
+  });
+
+  test("a key added after the extension falls back to the status", async () => {
+    const answer = json(404, { error: { code: "NOT_FOUND", key: "something_new" } });
+    const error = await failureOf(client(fake(answer)).timer());
+    expect(error).toMatchObject({ code: "NOT_FOUND", key: "something_new", message: "Snowtime answered 404." });
+  });
+
+  test("invalid input without a code keeps the message", async () => {
+    const answer = json(400, { error: { message: "Invalid UUID" } });
+    const error = await failureOf(client(fake(answer)).timer());
+    expect(error).toMatchObject({ status: 400, code: "HTTP_400", message: "Invalid UUID" });
   });
 
   test("429 keeps the wait Retry-After gives", async () => {
-    const answer = refusal(429, "RATE_LIMITED", "Too many requests.", { "retry-after": "5" });
+    const answer = keyRefusal(429, "RATE_LIMITED", "Too many requests.", { "retry-after": "5" });
     const error = await failureOf(client(fake(answer)).timer());
     expect(error).toMatchObject({ status: 429, code: "RATE_LIMITED", method: "GET", retryAfter: 5 });
   });
@@ -148,7 +179,7 @@ describe("starting a timer", () => {
   });
 
   test("doesn't retry an answered failure", async () => {
-    const fetchFn = fake(refusal(409, "CONFLICT", "Project is archived."));
+    const fetchFn = fake(refusal(409, "CONFLICT", "project_archived"));
     const error = await failureOf(client(fetchFn).startTimer("org-1", input));
     expect(error.status).toBe(409);
     expect(fetchFn).toHaveBeenCalledTimes(1);
@@ -165,8 +196,8 @@ describe("starting a timer", () => {
     const project = { id: "project-1", name: "Website redesign", color: null };
     const fetchFn = fake(
       new TypeError("fetch failed"),
-      refusal(409, "CONFLICT", "Entry already exists."),
-      json(200, { timer: { ...entry, project } }),
+      refusal(409, "CONFLICT", "entry_id_taken"),
+      json(200, { ...entry, project }),
     );
     expect(await client(fetchFn).startTimer("org-1", input)).toEqual({ started: entry, stopped: null });
     expect(fetchFn.mock.calls[2][0]).toBe("https://snowtime.example.com/api/v1/timer");
@@ -175,19 +206,15 @@ describe("starting a timer", () => {
   test("a 409 on the retry fails when another timer is running", async () => {
     const fetchFn = fake(
       new TypeError("fetch failed"),
-      refusal(409, "CONFLICT", "Another timer started at the same moment."),
-      json(200, { timer: { ...entry, id: "01920000-0000-7000-8000-000000000999", project: null } }),
+      refusal(409, "CONFLICT", "timer_started_elsewhere"),
+      json(200, { ...entry, id: "01920000-0000-7000-8000-000000000999", project: null }),
     );
     const error = await failureOf(client(fetchFn).startTimer("org-1", input));
-    expect(error).toMatchObject({ status: 409, message: "Another timer started at the same moment." });
+    expect(error).toMatchObject({ status: 409, message: "Another timer was started at the same time." });
   });
 
   test("a 409 on the retry fails when no timer is running", async () => {
-    const fetchFn = fake(
-      new TypeError("fetch failed"),
-      refusal(409, "CONFLICT", "Entry already exists."),
-      json(200, { timer: null }),
-    );
+    const fetchFn = fake(new TypeError("fetch failed"), refusal(409, "CONFLICT", "entry_id_taken"), json(200, null));
     expect((await failureOf(client(fetchFn).startTimer("org-1", input))).status).toBe(409);
   });
 });
