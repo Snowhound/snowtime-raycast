@@ -1,0 +1,21 @@
+# 010: The menu bar keeps the last failed read
+
+Status: todo
+
+A failed read shows in the menu only in the run that made it. Reopening the menu runs the
+command again from the cache, so after a failed Refresh, or a failed background read, the
+menu shows the last known timer as if nothing failed. The fix keeps the failure in the
+`Cache` next to the timer, and sends no more requests.
+
+## Acceptance criteria
+
+- [ ] `prototypes/running-timer.html` shows a reopened menu after a failed read, and the
+      user approves it
+- [ ] A failed read of the timer or the Start Again entries, from Refresh, a background
+      read, or the menu's Start Again or Stop Timer, saves its status, code, and message
+      in the cache
+- [ ] Any answer from the API, also a start or stop from another command, clears it
+- [ ] A run from the cache shows the saved failure with "Showing the last known timer.",
+      and the time of the last successful read if the prototype shows it
+- [ ] `docs/architecture/README.md` ("The menu bar") records the decision
+- [ ] A person checks it in Raycast: Refresh with a wrong Instance URL, then reopen the menu

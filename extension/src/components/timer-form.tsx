@@ -1,5 +1,5 @@
 import { Action, ActionPanel, Form, Icon, Keyboard } from "@raycast/api";
-import { useCachedPromise, useForm } from "@raycast/utils";
+import { showFailureToast, useCachedPromise, useForm } from "@raycast/utils";
 import { useEffect, useRef, useState } from "react";
 import { api, snowtimeUrl } from "../api";
 import { showApiFailure } from "../api/toast";
@@ -23,6 +23,14 @@ export interface TimerFormProps {
   organizationId?: string;
 }
 
+// The organizations, and the one the form starts in: the one passed in, else the remembered
+// one.
+async function loadOrganizations(preferred?: string) {
+  const { organizations } = await api().me();
+  const initial = organizations.find((org) => org.id === preferred) ?? (await rememberedOrganization(organizations));
+  return { organizations, initialId: initial?.id };
+}
+
 interface Values {
   description: string;
   ticket: string;
@@ -38,18 +46,9 @@ export function TimerForm(props: TimerFormProps) {
   const projectsSetFor = useRef<string>(undefined);
   const organizationChanged = useRef(false);
 
-  // The organizations, and the one the form starts in: the one passed in, else the
-  // remembered one.
-  const orgs = useCachedPromise(
-    async (preferred?: string) => {
-      const { organizations } = await api().me();
-      const initial =
-        organizations.find((org) => org.id === preferred) ?? (await rememberedOrganization(organizations));
-      return { organizations, initialId: initial?.id };
-    },
-    [props.organizationId],
-    { onError: (error) => showApiFailure(error, { title: "Couldn't load organizations" }) },
-  );
+  const orgs = useCachedPromise(loadOrganizations, [props.organizationId], {
+    onError: (error) => showApiFailure(error, { title: "Couldn't load organizations" }),
+  });
   const organizations = orgs.data?.organizations ?? [];
   const organization = pickOrganization(organizations, organizationId ?? orgs.data?.initialId);
 
@@ -74,16 +73,36 @@ export function TimerForm(props: TimerFormProps) {
         value?.trim() && !TICKET_PATTERN.test(value.trim()) ? "Use a ticket key such as ABC-123." : undefined,
     },
     async onSubmit(values) {
-      if (!organization) return;
+      const target = organization ?? (await organizationOnSubmit());
+      if (!target) return;
       let description = values.description.trim();
       let ticket = values.ticket.trim() || null;
       // A ticket the user typed is never replaced (docs/architecture/README.md, "Tickets from
       // the description").
       if (!ticket) ({ description, ticket } = detectTicket(description, new Set(), null));
       const project = projectList?.find((p) => p.id === values.projectId) ?? null;
-      await startTimer(organization, { description, ticket, project });
+      await startTimer(target, { description, ticket, project });
     },
   });
+
+  // A submit before the organizations loaded, or after loading them failed, reads them
+  // itself, so ↵ always starts the timer or says why it can't. The Project field shows No
+  // project until they load, so the timer starts without one.
+  async function organizationOnSubmit() {
+    try {
+      const { organizations, initialId } = await loadOrganizations(props.organizationId);
+      const found = pickOrganization(organizations, initialId);
+      if (!found) {
+        await showFailureToast("Join or create an organization in Snowtime to start a timer.", {
+          title: "No organizations",
+        });
+      }
+      return found;
+    } catch (error) {
+      await showApiFailure(error, { title: "Couldn't start timer" });
+      return undefined;
+    }
+  }
 
   // Once an organization's projects load, preselect the project: none after the user changed
   // the organization, else the one passed in, else the remembered one, if still listed.
