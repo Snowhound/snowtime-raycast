@@ -82,7 +82,7 @@
 
   function icon(name, color) {
     if (!name) return "";
-    if (name === "Snowtime") return '<img src="../assets/extension-icon.png" alt="" width="16" height="16">';
+    if (name === "Snowtime") return '<img src="../extension/assets/extension-icon.png" alt="" width="16" height="16">';
     // The menu bar's template image, in the bar's own text color (menu-bar-mark.js).
     if (name === "SnowtimeTemplate" && window.MENU_BAR_MARK) {
       return `<span class="mark" title="Template image">${window.MENU_BAR_MARK}</span>`;
@@ -118,7 +118,7 @@
   function actionBar(view, actions) {
     const left = view.toast
       ? toastHtml(view.toast)
-      : `<img src="../assets/extension-icon.png" alt=""><span>${esc(view.navigationTitle ?? "Snowtime")}</span>`;
+      : `<img src="../extension/assets/extension-icon.png" alt=""><span>${esc(view.navigationTitle ?? "Snowtime")}</span>`;
     const primary = actions[0];
     return `<div class="actionbar"><div class="left">${left}</div>${
       primary

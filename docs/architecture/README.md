@@ -26,6 +26,9 @@ Rust (Snowtime task 081). A feature the API lacks is added to the API first.
 
 ## Code layout
 
+The extension lives in `extension/` ([Repository and publishing](#repository-and-publishing)),
+and this doc gives the paths of its files relative to that folder.
+
 | Path                | Holds                                                                            |
 | ------------------- | -------------------------------------------------------------------------------- |
 | `src/<command>.tsx` | One file per command, named as in `package.json`, as Raycast requires            |
@@ -252,12 +255,19 @@ Those that shape the design:
 - `README.md` explains the setup, because it needs an API key. Screenshots go in
   `metadata/`: three to six PNGs at 2000 × 1250. `CHANGELOG.md` uses
   `## [Title] - {PR_MERGE_DATE}`.
-- The `owner` field stays unset: it would publish the extension privately to an
-  organization's Raycast team instead of the public Store.
 
 ## Repository and publishing
 
-The repository is private on the user's GitHub account until the Snowhound organization
-can take it; a transfer keeps its history and redirects the old URL. The Store builds from a
-pull request to `raycast/extensions`, which copies the extension into that monorepo. This
-repository stays the source of truth, and each release is a new pull request there.
+The repository is public at
+[Snowhound/snowtime-raycast](https://github.com/Snowhound/snowtime-raycast). The Store
+builds from a pull request to `raycast/extensions`, which copies the extension into that
+monorepo. This repository stays the source of truth, and each release is a new pull
+request there.
+
+The extension sits in `extension/`, and the docs, tasks, prototypes, and agent
+instructions sit beside it at the root. `ray publish` copies the whole directory it runs
+from, skipping only `.git`, `node_modules`, and generated files, and reads no ignore list.
+Running it from `extension/` keeps everything else out of `raycast/extensions`. A script
+that copies selected files to a temporary folder was rejected: `ray publish` and
+`pull-contributions` write reviewers' edits back into the folder they run from, so the
+edits would land outside this repository.

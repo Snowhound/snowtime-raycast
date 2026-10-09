@@ -2,9 +2,11 @@
 
 ## Getting started
 
-Needs Node 22.22 or later and the Raycast app.
+Needs Node 22.22 or later and the Raycast app. The extension is in `extension/`, and every
+`npm` command runs there.
 
 ```sh
+cd extension
 npm install
 npm run dev
 ```

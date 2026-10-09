@@ -2,6 +2,7 @@
 
 ## Project context
 
+- Extension source, manifest, and npm scripts: `extension/`
 - Product scope: `docs/product.md`
 - Local setup and scripts: `docs/development.md`
 - Architecture decisions: `docs/architecture/`
