@@ -28,17 +28,20 @@ timers alone.
 
 ## Checking a command
 
-Raycast can't be driven by an agent, so a person checks each command in Raycast before its
-task is done: every state its prototype shows, in light and dark, and against the local
-Snowtime. The prototypes are checked by agents first (`docs/skills/ui-review/SKILL.md`).
+`npm test` covers every command against stand-ins for Raycast and Snowtime
+([architecture](architecture/README.md), "Tests"). They can't show how Raycast draws a
+view, and Raycast can't be driven by an agent, so a person checks each command in Raycast
+before its task is done: every state its prototype shows, in light and dark, and against
+the local Snowtime. The prototypes are checked by agents first
+(`docs/skills/ui-review/SKILL.md`).
 
 ## Scripts
 
-| Command            | Does                                                      |
-| ------------------ | --------------------------------------------------------- |
-| `npm run dev`      | Runs the extension in Raycast and rebuilds it on save     |
-| `npm run build`    | Builds the extension as the Store will                    |
-| `npm run lint`     | `ray lint`: the manifest, the icons, ESLint, and Prettier |
-| `npm test`         | Vitest on `src/api/` and `src/lib/`, in Europe/Tallinn    |
-| `npm run fix-lint` | `ray lint --fix`                                          |
-| `npm run publish`  | Opens the pull request to `raycast/extensions` (task 004) |
+| Command            | Does                                                        |
+| ------------------ | ----------------------------------------------------------- |
+| `npm run dev`      | Runs the extension in Raycast and rebuilds it on save       |
+| `npm run build`    | Builds the extension as the Store will                      |
+| `npm run lint`     | `ray lint`: the manifest, the icons, ESLint, and Prettier   |
+| `npm test`         | Type-checks the tests, then runs them all in Europe/Tallinn |
+| `npm run fix-lint` | `ray lint --fix`                                            |
+| `npm run publish`  | Opens the pull request to `raycast/extensions` (task 004)   |

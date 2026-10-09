@@ -13,5 +13,6 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
     "resolveJsonModule": true
-  }
+  },
+  "exclude": ["src/test", "src/**/*.test.ts", "src/**/*.test.tsx"]
 }

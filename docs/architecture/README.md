@@ -12,7 +12,7 @@ user's approval, and the task that depends on it names it.
 | Language   | TypeScript 6.0: `@raycast/eslint-config` 2.2 supports TypeScript below 6.1                                             |
 | Packages   | npm, because the Raycast Store builds from `package-lock.json`                                                         |
 | Lint       | `ray lint`: ESLint with Raycast's config, Prettier, and the Store's manifest and icon checks                           |
-| Tests      | Vitest for the modules without UI (`src/api/`, `src/lib/`); commands are checked by hand in Raycast                    |
+| Tests      | Vitest for every module and command, against stand-ins for Raycast and Snowtime ("Tests")                              |
 | Prototypes | Static HTML in `prototypes/`, approved before a command is built (`prototypes/README.md`)                              |
 
 The only other runtime dependency is `uuid`, for UUID v7 entry ids.
@@ -35,6 +35,7 @@ and this doc gives the paths of its files relative to that folder.
 | `src/api/`          | The API client: requests, response types, and the error type                     |
 | `src/lib/`          | Code without UI: formatting, the organization choice, entry ids, the timer cache |
 | `src/components/`   | Views and actions that more than one command uses                                |
+| `src/test/`         | The tests' stand-ins for `@raycast/api` and Snowtime, and their helpers          |
 
 A command file only wires its view. Logic it shares goes to `src/lib/` or `src/api/`, where
 tests reach it.
@@ -240,6 +241,33 @@ Raycast supports only US English, so the extension does too, and doesn't transla
   at 1:37").
 - Titles of commands, actions, and sections use Title Case; descriptions and toasts use
   sentence case.
+
+## Tests
+
+Every command has tests, beside it as `<command>.test.tsx` (decided 2026-10-09). They
+render the command and use it as a person would: they find rows by title, run actions by
+name, and type in the search bar and the form. Then they check what reached Snowtime and
+what Raycast was asked to show. Two stand-ins in `src/test/` make that possible outside
+Raycast:
+
+- `raycast-api.tsx` replaces `@raycast/api` (`vitest.config.mts` aliases it). Its
+  components draw plain HTML that Testing Library queries: a row is a `listitem` named by
+  its title, an action a `button`, a field a control named by its title. It records HUDs,
+  toasts, launches, opened URLs, and copies, and keeps `Cache` and `LocalStorage` in
+  memory, with a `Cache` namespace per store as Raycast keeps them.
+- `snowtime.ts` answers `fetch` as `/api/v1` does in Snowtime's `docs/api.md`, from data
+  each test sets up, and can fail a request or go offline.
+
+The real `@raycast/utils` runs on the stand-in, inlined so that its own imports reach it,
+so the tests also cover how the commands use `useCachedPromise` and `useForm`. The clock
+is fixed at the prototypes' moment, Monday 5 October 2026, 10:42 in Tallinn, so durations
+and day titles are exact.
+
+The stand-in can't show how Raycast draws a view, so a person still checks each command in
+Raycast (`docs/development.md`, "Checking a command"). The tests are type-checked with
+`tsconfig.test.json`, which adds the DOM types the main `tsconfig.json` leaves out of the
+extension. `react-dom` is pinned to the React version `@raycast/api` brings; an upgrade of
+`@raycast/api` that moves React moves it too.
 
 ## Raycast Store rules
 

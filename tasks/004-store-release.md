@@ -16,7 +16,8 @@ while.
 - [x] `extension/CHANGELOG.md` lists the first version under
       `## [Initial Version] - {PR_MERGE_DATE}`
 - [ ] `extension/package.json` has the final title, description, keywords, and
-      categories, and the latest `@raycast/api`
+      categories, and the latest `@raycast/api`, with `react-dom` at the React version it
+      brings
 - [x] The extension sits in `extension/`, so `npm run publish` leaves the docs, tasks,
       prototypes, and agent files out of `raycast/extensions`
 - [ ] `npm run build` and `npm run lint` pass
