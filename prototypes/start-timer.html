@@ -10,9 +10,10 @@
   </head>
   <body>
     <script>
-      // Start Timer (task 001, subtask 02): a list whose search bar is the description. Rows
-      // are recent entries to start again; with no match, ↵ opens the timer form
-      // (timer-form.html) with what was typed.
+      // Start Timer (task 001, subtask 02; task 005): a list whose search bar is the
+      // description. Rows are recent entries to start again; with no match, ↵ opens the timer
+      // form (timer-form.html) with what was typed. New Timer (⌘N) opens it from any row,
+      // with what was typed or empty.
       const { orgs, projects, running, entries, format, NOW } = Fixtures;
 
       // The default of the Suggestions From preference: today and yesterday.
@@ -45,7 +46,18 @@
         return m ? { ticket: m[1], description: m[2] } : { ticket: undefined, description: text };
       }
 
-      function row(e) {
+      // In every row's panel: the timer form with the typed text, as the New timer row opens
+      // it, or empty when nothing is typed; with the remembered project either way.
+      function newTimer(text) {
+        return {
+          title: "New Timer",
+          icon: "Plus",
+          shortcut: "cmd+n",
+          goto: text ? "Form: from the search" : "Form: new timer",
+        };
+      }
+
+      function row(e, timerRuns, text) {
         const isRunning = e === running;
         return {
           icon: e.project ? "CircleFilled" : "Circle",
@@ -65,9 +77,13 @@
               goto: running && !isRunning ? "Started, stopping another" : "Started",
             },
             { title: "Edit and Start", icon: "Pencil", goto: "Form: from a suggestion" },
+            newTimer(text),
             { title: "Copy Description", icon: "CopyClipboard", shortcut: "cmd+c" },
             { title: "Open Snowtime", icon: "Globe", shortcut: "cmd+o" },
             { title: "Refresh", icon: "ArrowClockwise", shortcut: "cmd+r" },
+            ...(timerRuns
+              ? [{ title: "Stop Timer", icon: "Stop", shortcut: "cmd+s", goto: "Stopped", section: "Running Timer" }]
+              : []),
           ],
         };
       }
@@ -79,17 +95,20 @@
           title: description,
           subtitle: "New timer",
           accessories: ticket ? [{ tag: ticket }] : [],
-          actions: [{ title: "Edit and Start", icon: "Pencil", goto }],
+          // ⌘N runs this action too, so New Timer's shortcut works on every row.
+          actions: [{ title: "Edit and Start", icon: "Pencil", shortcut: "cmd+n", goto }],
         };
       }
 
-      function byDay(list) {
+      // Stop Timer shows on every row while a suggestion runs, as in Recent Entries.
+      function byDay(list, text) {
         const days = [];
+        const timerRuns = list.includes(running);
         for (const e of list) {
           const title = format.dayTitle(e.startedAt);
           let day = days.find((d) => d.title === title);
           if (!day) days.push((day = { title, items: [] }));
-          day.items.push(row(e));
+          day.items.push(row(e, timerRuns, text));
         }
         return days;
       }
@@ -101,25 +120,32 @@
           searchPlaceholder: "What are you working on?",
           searchText: text,
           accessory: several ? org.name : undefined,
-          sections: [...byDay(found), ...extra],
+          sections: [...byDay(found, text), ...extra],
           ...rest,
         };
       }
 
       // The form the list pushes, as timer-form.html draws it.
       function form({ description, ticket, project = remembered }) {
+        // With a description, the cursor waits in Ticket; an empty form starts at Description.
         return {
           type: "form",
           navigationTitle: "Start Timer",
           back: true,
           fields: [
-            { type: "textfield", title: "Description", value: description, placeholder: "What are you working on?" },
+            {
+              type: "textfield",
+              title: "Description",
+              value: description,
+              placeholder: "What are you working on?",
+              focused: !description,
+            },
             {
               type: "textfield",
               title: "Ticket",
               value: ticket,
               placeholder: "ABC-123",
-              focused: !ticket,
+              focused: !!description && !ticket,
               info: "Left empty, a ticket key in the description, such as ABC-123, becomes the ticket.",
             },
             {
@@ -150,6 +176,7 @@
           "Type what you're working on. Matching entries from today and yesterday show below (the Suggestions From preference); ↵ starts one at once, ⌘↵ opens the form to change it first.",
           "With no match, ↵ opens the timer form with the typed description, a ticket key at its start split off, and the remembered project.",
           "Each description, ticket, and project shows once here, at its newest entry; Recent Entries lists every entry.",
+          "New Timer (⌘N), in every row's actions, opens the form as the New timer row does: with the typed text, or empty when nothing is typed, and the remembered project. While a suggestion runs, every row also has Stop Timer (⌘S).",
         ],
         states: {
           Loading: () => list({ isLoading: true, sections: [] }),
@@ -173,6 +200,7 @@
               extra: [{ items: [newTimerRow("OPS-9 Budget review", "Form: ticket from the search")] }],
             }),
           "Form: from the search": () => form({ description: "Quarterly report" }),
+          "Form: new timer": () => form({}),
           "Form: ticket from the search": () => form({ description: "Budget review", ticket: "OPS-9" }),
           "Form: from a suggestion": () =>
             form({ description: "Inbox triage", ticket: "OPS-7", project: projects.internal }),
@@ -183,7 +211,7 @@
                 icon: "Clock",
                 title: "No entries since yesterday",
                 description: "Type what you're working on to start a timer.",
-                actions: [{ title: "Edit and Start", icon: "Pencil", goto: "Form: from the search" }],
+                actions: [newTimer()],
               },
             }),
           "Error: key not valid (401)": () =>
@@ -213,6 +241,10 @@
             }),
           Started: () => ({ type: "hud", title: "Started “Inbox triage” on OPS-7" }),
           "Started, without a description": () => ({ type: "hud", title: "Started a timer" }),
+          Stopped: () => ({
+            type: "hud",
+            title: `Stopped “${running.description}” at ${format.duration(running)}`,
+          }),
           "Started, stopping another": () => ({
             type: "hud",
             title: `Started “Inbox triage” and stopped “${running.description}” at ${format.duration(running)}`,

@@ -18,13 +18,13 @@ You can change both later in Raycast's settings, under Extensions → Snowtime.
 
 ## Commands
 
-| Command        | Does                                                                                      | Key scope |
-| -------------- | ----------------------------------------------------------------------------------------- | --------- |
-| Start Timer    | Type what you're working on. ↵ starts a matching recent entry again; ⌘↵ opens the form.   | `write`   |
-| Continue Timer | Opens the timer form filled in from your running or newest entry, to change and start.    | `write`   |
-| Stop Timer     | Stops the running timer and shows how long it ran.                                        | `write`   |
-| Recent Entries | Your entries of the last 14 days, grouped by day with each day's total. Starts any again. | `read`    |
-| Running Timer  | The elapsed time in the menu bar, with a menu to stop the timer or start another.         | `read`    |
+| Command        | Does                                                                                                                     | Key scope |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------ | --------- |
+| Start Timer    | Type what you're working on. ↵ starts a matching recent entry again; ⌘↵ edits it first; ⌘N opens the form for a new one. | `write`   |
+| Continue Timer | Opens the timer form filled in from your running or newest entry, to change and start.                                   | `write`   |
+| Stop Timer     | Stops the running timer and shows how long it ran.                                                                       | `write`   |
+| Recent Entries | Your entries of the last 14 days, grouped by day with each day's total. Starts any again.                                | `read`    |
+| Running Timer  | The elapsed time in the menu bar, with a menu to stop the timer or start another.                                        | `read`    |
 
 Recent Entries and Running Timer read with a `read` key, but their actions that start or
 stop a timer need `write`.

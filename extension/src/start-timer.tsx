@@ -1,12 +1,13 @@
 import { Action, ActionPanel, Color, getPreferenceValues, Icon, List, Keyboard } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
-import { snowtimeUrl, type Organization } from "./api";
+import { snowtimeUrl, type Organization, type RunningEntry } from "./api";
 import { showApiFailure } from "./api/toast";
 import { ErrorView } from "./components/error-view";
 import { OrganizationDropdown } from "./components/organization-dropdown";
 import { projectIcon } from "./components/project-icon";
 import { startTimer } from "./components/start";
+import { stopTimer } from "./components/stop";
 import { TimerForm } from "./components/timer-form";
 import { useElapsed } from "./components/use-elapsed";
 import { entryLabel } from "./lib/entries";
@@ -41,6 +42,9 @@ export default function Command() {
 
   const found = (data?.suggestions ?? []).filter((suggestion) => !searchText.trim() || matches(suggestion, searchText));
   const sections = groupByDay(found);
+  // The running entry, if a suggestion holds it, for every row's Stop Timer.
+  const running = data?.suggestions.find(({ entry }) => entry.stoppedAt === null);
+  const runningEntry: RunningEntry | undefined = running && { ...running.entry, project: running.project };
 
   return (
     <List
@@ -78,11 +82,7 @@ export default function Command() {
           actions={
             organization && (
               <ActionPanel>
-                <Action.Push
-                  title="Edit and Start"
-                  icon={Icon.Pencil}
-                  target={<TimerForm navigationTitle="Start Timer" organizationId={organization.id} />}
-                />
+                <NewTimerAction text={searchText} organization={organization} />
               </ActionPanel>
             )
           }
@@ -96,6 +96,8 @@ export default function Command() {
                 key={suggestion.entry.id}
                 suggestion={suggestion}
                 organization={organization}
+                searchText={searchText}
+                running={runningEntry}
                 onRefresh={revalidate}
               />
             ))}
@@ -113,10 +115,15 @@ export default function Command() {
 function SuggestionItem({
   suggestion: { entry, project },
   organization,
+  searchText,
+  running: runningEntry,
   onRefresh,
 }: {
   suggestion: EntryRow;
   organization: Organization;
+  searchText: string;
+  // The running timer, when a suggestion holds it.
+  running: RunningEntry | undefined;
   onRefresh: () => void;
 }) {
   const running = entry.stoppedAt === null;
@@ -152,6 +159,7 @@ function SuggestionItem({
               />
             }
           />
+          <NewTimerAction text={searchText} organization={organization} />
           {entry.description && (
             <Action.CopyToClipboard
               title="Copy Description"
@@ -170,13 +178,45 @@ function SuggestionItem({
             shortcut={Keyboard.Shortcut.Common.Refresh}
             onAction={onRefresh}
           />
+          {runningEntry && (
+            <ActionPanel.Section title="Running Timer">
+              <Action
+                title="Stop Timer"
+                icon={Icon.Stop}
+                shortcut={Keyboard.Shortcut.Common.Save}
+                onAction={() => stopTimer(runningEntry)}
+              />
+            </ActionPanel.Section>
+          )}
         </ActionPanel>
       }
     />
   );
 }
 
+// New Timer (⌘N): the timer form with the typed text, as the New timer row opens it, or
+// empty when nothing is typed.
+function NewTimerAction({ text, organization }: { text: string; organization: Organization }) {
+  const { description, ticket } = newTimerFrom(text);
+  return (
+    <Action.Push
+      title="New Timer"
+      icon={Icon.Plus}
+      shortcut={Keyboard.Shortcut.Common.New}
+      target={
+        <TimerForm
+          navigationTitle="Start Timer"
+          description={description}
+          ticket={ticket}
+          organizationId={organization.id}
+        />
+      }
+    />
+  );
+}
+
 // The last row while the user types: a new timer with the typed text, opened in the form.
+// ⌘N runs its action too, so New Timer's shortcut works on every row.
 function NewTimerItem({ text, organization }: { text: string; organization: Organization }) {
   const { description, ticket } = newTimerFrom(text);
   return (
@@ -190,6 +230,7 @@ function NewTimerItem({ text, organization }: { text: string; organization: Orga
           <Action.Push
             title="Edit and Start"
             icon={Icon.Pencil}
+            shortcut={Keyboard.Shortcut.Common.New}
             target={
               <TimerForm
                 navigationTitle="Start Timer"

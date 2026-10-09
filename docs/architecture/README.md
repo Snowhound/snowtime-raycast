@@ -181,6 +181,14 @@ Start Timer is a list whose search bar is the description (decided 2026-10-03). 
   the only row, so ↵ pushes the timer form with the text as the description, a ticket key
   at its start split off by the rules in "Tickets from the description", and the
   remembered project.
+- New Timer (`⌘N`), in every row's actions and the empty view, opens the timer form as the
+  New timer row does: with the typed text, or empty when nothing is typed, and the
+  remembered project. So the user can start a new timer without typing first, and with
+  text typed, `⌘N` skips the matching suggestions. On the New timer row, `⌘N` runs the
+  row's own Edit and Start (decided 2026-10-09).
+- While a suggestion is the running timer, every row has Stop Timer (`⌘S`) in a Running
+  Timer section, as in Recent Entries. ↵ on the running row stays Start Again, since the
+  command is for starting (decided 2026-10-09).
 - The list reads the range once per open, through `useCachedPromise`, so a second open
   shows the last suggestions at once.
 
