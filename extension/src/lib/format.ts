@@ -2,8 +2,8 @@
 // the Time Format preference chooses (docs/architecture/README.md, "Language and formats"). The API doesn't send the
 // user's Snowtime time zone, so a day is the Mac's day.
 
+import { preferredHourCycle } from "../settings/time-format";
 import type { HourCycle } from "./clock";
-import { preferredHourCycle } from "./time-format";
 
 const MINUTE = 60_000;
 

@@ -1,5 +1,6 @@
 import { ApiError, NO_ANSWER } from "../api/errors";
 import type { Entry, Project } from "../api/types";
+import { asTitle } from "./names";
 import { suggestionsFrom } from "./rows";
 
 // What Running Timer shows, apart from Raycast (docs/architecture/README.md, "The menu bar").
@@ -29,10 +30,10 @@ export function startAgainFrom(entries: Entry[], projects: Project[], running: E
 export function menuError(error: Error, host: string, hasCachedTimer: boolean) {
   const fallback = hasCachedTimer ? "Showing the last known timer." : undefined;
   if (error instanceof ApiError && error.status === 401) {
-    return { title: error.message.replace(/\.$/, ""), detail: "Check it under Configure Extension." };
+    return { title: asTitle(error.message), detail: "Check it under Configure Extension." };
   }
   if (error instanceof ApiError && error.code === NO_ANSWER) {
     return { title: `Can't reach ${host}`, detail: fallback ?? "Check your connection or the instance URL." };
   }
-  return { title: error.message.replace(/\.$/, ""), detail: fallback ?? "Refresh to try again." };
+  return { title: asTitle(error.message), detail: fallback ?? "Refresh to try again." };
 }

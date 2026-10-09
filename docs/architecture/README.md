@@ -29,16 +29,23 @@ Rust (Snowtime task 081). A feature the API lacks is added to the API first.
 The extension lives in `extension/` ([Repository and publishing](#repository-and-publishing)),
 and this doc gives the paths of its files relative to that folder.
 
-| Path                | Holds                                                                            |
-| ------------------- | -------------------------------------------------------------------------------- |
-| `src/<command>.tsx` | One file per command, named as in `package.json`, as Raycast requires            |
-| `src/api/`          | The API client: requests, response types, and the error type                     |
-| `src/lib/`          | Code without UI: formatting, the organization choice, entry ids, the timer cache |
-| `src/components/`   | Views and actions that more than one command uses                                |
-| `src/test/`         | The tests' stand-ins for `@raycast/api` and Snowtime, and their helpers          |
+Each folder holds one kind of code, so its name says where to look (decided 2026-10-09):
 
-A command file only wires its view. Logic it shares goes to `src/lib/` or `src/api/`, where
-tests reach it.
+| Path                | Holds                                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| `src/<command>.tsx` | One file per command, named as in `package.json`, as Raycast requires                        |
+| `src/api/`          | The API client, its types and errors, and `load-recent.ts`, which reads recent entries       |
+| `src/timer/`        | Starting and stopping a timer from any command, and the timer cache the menu bar reads       |
+| `src/settings/`     | The remembered organization and project, and the Time Format preference                      |
+| `src/components/`   | Views and actions more than one command uses: the timer form, the entry actions, error views |
+| `src/hooks/`        | React hooks, such as `useElapsed`, which moves a running timer's minutes                     |
+| `src/lib/`          | Code that imports nothing from Raycast: formatting, names, rows, tickets, the menu's rules   |
+| `src/test/`         | The tests' stand-ins for `@raycast/api` and Snowtime, and their helpers                      |
+
+A command file only wires its view. Start Timer and Recent Entries take their entry
+actions from `components/entry-actions.tsx`, so both name, icon, and bind them alike.
+Logic without UI goes to `src/lib/`, where tests need no stand-ins. `lib/format.ts` reads
+the Time Format preference through `settings/`, the one way into Raycast from `lib/`.
 
 ## Sign-in and preferences
 

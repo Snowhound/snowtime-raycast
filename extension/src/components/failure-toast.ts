@@ -1,7 +1,7 @@
 import { environment, getPreferenceValues, open, openExtensionPreferences, showHUD, Toast } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
-import { siteUrl } from "./client";
-import { ApiError, NO_ANSWER } from "./errors";
+import { siteUrl } from "../api/client";
+import { ApiError, NO_ANSWER } from "../api/errors";
 
 interface Options {
   // The toast's title, such as "Couldn't start timer".

@@ -1,6 +1,6 @@
 import { Icon, List } from "@raycast/api";
 import type { Organization } from "../api";
-import { rememberOrganization } from "../lib/organization";
+import { rememberOrganization } from "../settings/organization";
 
 // The search bar's organization picker; none for a user in one organization. A pick is
 // remembered for every command (docs/architecture/README.md, "Organizations").

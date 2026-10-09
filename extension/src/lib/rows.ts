@@ -1,4 +1,4 @@
-import type { Entry, Project } from "../api/types";
+import type { Entry, Project, RunningEntry } from "../api/types";
 import { formatClock, formatDay } from "./format";
 import { detectTicket } from "./tickets";
 
@@ -10,6 +10,23 @@ export interface EntryRow {
   // The entry's project if the organization still lists it as active. An archived or
   // deleted one can't take a new timer, so the row starts without it.
   project: Project | null;
+}
+
+// What a new timer starts with.
+export interface NewTimer {
+  description: string;
+  ticket: string | null;
+  project: Project | null;
+}
+
+// A row's entry as a new timer: its description, ticket, and active project.
+export function timerOf({ entry, project }: EntryRow): NewTimer {
+  return { description: entry.description, ticket: entry.ticket, project };
+}
+
+// A row's entry as the running timer, with its project, as GET /api/v1/timer answers it.
+export function runningEntryOf({ entry, project }: EntryRow): RunningEntry {
+  return { ...entry, project };
 }
 
 // Every entry with its active project. `entries` come newest first, as the API sends them.

@@ -1,8 +1,8 @@
 import { PopToRootType, showHUD } from "@raycast/api";
 import { api, isApiError, type RunningEntry } from "../api";
-import { showApiFailure } from "../api/toast";
-import { stoppedHud } from "../lib/hud";
-import { cachedTimer, cacheTimer, refreshMenuBar } from "../lib/menu-bar";
+import { showApiFailure } from "../components/failure-toast";
+import { stoppedHud } from "../lib/names";
+import { cachedTimer, cacheTimer, refreshMenuBar } from "./cache";
 
 // Stops the running timer, from any command: `running` when the caller knows it, else the
 // timer the API says runs. It stops that entry by its id, so a timer started since in the

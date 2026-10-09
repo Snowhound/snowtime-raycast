@@ -1,16 +1,11 @@
 import { environment, PopToRootType, showHUD, showToast, Toast } from "@raycast/api";
-import { api, type Organization, type Project } from "../api";
-import { showApiFailure } from "../api/toast";
-import { startedHud } from "../lib/hud";
+import { api, type Organization } from "../api";
+import { showApiFailure } from "../components/failure-toast";
 import { newEntryId } from "../lib/ids";
-import { cacheTimer, refreshMenuBar } from "../lib/menu-bar";
-import { rememberStart } from "../lib/organization";
-
-export interface NewTimer {
-  description: string;
-  ticket: string | null;
-  project: Project | null;
-}
+import { startedHud } from "../lib/names";
+import type { NewTimer } from "../lib/rows";
+import { rememberStart } from "../settings/organization";
+import { cacheTimer, refreshMenuBar } from "./cache";
 
 // Starts a timer as a new entry, from any command: remembers its organization and project
 // for the next form, shows it in the menu bar, and closes Raycast with a HUD. A failure

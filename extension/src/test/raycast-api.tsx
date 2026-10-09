@@ -40,6 +40,8 @@ export const raycast = {
   closed: false,
   localStorage: new Map<string, string>(),
   cache: new Map<string, string>(),
+  // What the actions run so far returned, for `runAction` to wait on.
+  running: [] as unknown[],
   // Set by `renderCommand`: shows a pushed view.
   push: ((view: ReactElement) => void view) as (view: ReactElement) => void,
 };
@@ -67,6 +69,7 @@ export function resetRaycast(preferences: Record<string, unknown> = {}) {
   raycast.copied = [];
   raycast.preferencesOpened = 0;
   raycast.closed = false;
+  raycast.running = [];
   raycast.localStorage.clear();
   raycast.cache.clear();
   Object.assign(environment, { commandName: "", commandMode: "view", launchType: "userInitiated" });
@@ -201,7 +204,7 @@ function shortcutOf(shortcut?: { modifiers: string[]; key: string }) {
 
 function ActionButton({ title, shortcut, onClick }: { title: string; shortcut?: Props; onClick: () => unknown }) {
   return (
-    <button type="button" data-shortcut={shortcutOf(shortcut as never)} onClick={() => void onClick()}>
+    <button type="button" data-shortcut={shortcutOf(shortcut as never)} onClick={() => raycast.running.push(onClick())}>
       {title}
     </button>
   );
@@ -395,7 +398,12 @@ MenuBarExtra.Section = function Section({ title, children }: Props) {
 MenuBarExtra.Item = function Item({ title, subtitle, shortcut, onAction }: Props) {
   if (!onAction) return <p data-subtitle={subtitle}>{title}</p>;
   return (
-    <button type="button" data-subtitle={subtitle} data-shortcut={shortcutOf(shortcut)} onClick={() => onAction()}>
+    <button
+      type="button"
+      data-subtitle={subtitle}
+      data-shortcut={shortcutOf(shortcut)}
+      onClick={() => raycast.running.push(onAction())}
+    >
       {title}
     </button>
   );

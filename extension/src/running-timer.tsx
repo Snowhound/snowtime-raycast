@@ -15,15 +15,16 @@ import { useCachedPromise, usePromise } from "@raycast/utils";
 import { useState } from "react";
 import { api, snowtimeUrl, type RunningEntry } from "./api";
 import { hostOf } from "./api/client";
-import { showApiFailure } from "./api/toast";
+import { loadRecent } from "./api/load-recent";
+import { showApiFailure } from "./components/failure-toast";
 import { projectIcon } from "./components/project-icon";
-import { startTimer } from "./components/start";
-import { stopTimer } from "./components/stop";
-import { entryLabel } from "./lib/entries";
 import { formatDuration, formatTime } from "./lib/format";
 import { menuError, startAgainFrom } from "./lib/menu";
-import { cachedTimer, cacheTimer, countBackgroundRun, type MenuBarContext } from "./lib/menu-bar";
-import { loadRecent } from "./lib/recent";
+import { entryLabel } from "./lib/names";
+import { timerOf, type EntryRow } from "./lib/rows";
+import { cachedTimer, cacheTimer, countBackgroundRun, type MenuBarContext } from "./timer/cache";
+import { startTimer } from "./timer/start";
+import { stopTimer } from "./timer/stop";
 
 // Running Timer: the running timer's elapsed time in the menu bar, and a menu to stop it or
 // start another (docs/architecture/README.md, "The menu bar").
@@ -173,22 +174,15 @@ export default function Command(props: LaunchProps<{ launchContext: MenuBarConte
           </MenuBarExtra.Section>
           {startAgain.length > 0 && recent.data?.organization && (
             <MenuBarExtra.Section title="Start Again">
-              {startAgain.map(({ entry, project }, index) => (
-                <MenuBarExtra.Item
-                  key={entry.id}
-                  title={entryLabel(entry)}
-                  subtitle={entry.description ? (entry.ticket ?? undefined) : undefined}
-                  icon={projectIcon(project)}
-                  tooltip={[entryLabel(entry), project?.name, entry.description && entry.ticket]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  shortcut={{ modifiers: ["cmd"], key: String(index + 1) as Keyboard.KeyEquivalent }}
-                  onAction={() => {
+              {startAgain.map((row, index) => (
+                <StartAgainItem
+                  key={row.entry.id}
+                  row={row}
+                  index={index}
+                  onStart={() => {
                     const organization = recent.data?.organization;
                     if (!organization) return;
-                    return act(() =>
-                      startTimer(organization, { description: entry.description, ticket: entry.ticket, project }),
-                    );
+                    return act(() => startTimer(organization, timerOf(row)));
                   }}
                 />
               ))}
@@ -224,6 +218,28 @@ function RunningSection({ running, onStop }: { running: RunningEntry; onStop: ()
         onAction={onStop}
       />
     </MenuBarExtra.Section>
+  );
+}
+
+// A recent entry to start again, with ⌘1 to ⌘5 by its place.
+function StartAgainItem({
+  row: { entry, project },
+  index,
+  onStart,
+}: {
+  row: EntryRow;
+  index: number;
+  onStart: () => void;
+}) {
+  return (
+    <MenuBarExtra.Item
+      title={entryLabel(entry)}
+      subtitle={entry.description ? (entry.ticket ?? undefined) : undefined}
+      icon={projectIcon(project)}
+      tooltip={[entryLabel(entry), project?.name, entry.description && entry.ticket].filter(Boolean).join(" · ")}
+      shortcut={{ modifiers: ["cmd"], key: String(index + 1) as Keyboard.KeyEquivalent }}
+      onAction={onStart}
+    />
   );
 }
 

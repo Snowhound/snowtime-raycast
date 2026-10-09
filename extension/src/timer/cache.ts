@@ -1,6 +1,6 @@
 import { Cache, environment, launchCommand, LaunchType } from "@raycast/api";
 import type { RunningEntry } from "../api/types";
-import { nextRun } from "./menu";
+import { nextRun } from "../lib/menu";
 
 // The running timer as the commands last saw it, for the menu bar's background runs
 // (docs/architecture/README.md, "The menu bar").

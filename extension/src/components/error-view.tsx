@@ -1,5 +1,6 @@
 import { Action, ActionPanel, Icon, List, openExtensionPreferences } from "@raycast/api";
 import { isApiError, NO_ANSWER } from "../api";
+import { asTitle } from "../lib/names";
 
 // A list's empty view when it couldn't load: what failed, and the action that fixes it.
 export function ErrorView({ error, onRefresh }: { error: Error; onRefresh: () => void }) {
@@ -12,7 +13,7 @@ export function ErrorView({ error, onRefresh }: { error: Error; onRefresh: () =>
     return (
       <List.EmptyView
         icon={Icon.Key}
-        title={error.message.replace(/\.$/, "")}
+        title={asTitle(error.message)}
         description="Check the API key in the extension's preferences."
         actions={<ActionPanel>{preferences}</ActionPanel>}
       />
@@ -22,7 +23,7 @@ export function ErrorView({ error, onRefresh }: { error: Error; onRefresh: () =>
     return (
       <List.EmptyView
         icon={Icon.WifiDisabled}
-        title={error.message.replace(/\.$/, "")}
+        title={asTitle(error.message)}
         description="Check your connection or the instance URL in the extension's preferences."
         actions={
           <ActionPanel>
@@ -34,10 +35,6 @@ export function ErrorView({ error, onRefresh }: { error: Error; onRefresh: () =>
     );
   }
   return (
-    <List.EmptyView
-      icon={Icon.Warning}
-      title={error.message.replace(/\.$/, "")}
-      actions={<ActionPanel>{refresh}</ActionPanel>}
-    />
+    <List.EmptyView icon={Icon.Warning} title={asTitle(error.message)} actions={<ActionPanel>{refresh}</ActionPanel>} />
   );
 }

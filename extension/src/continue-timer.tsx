@@ -1,10 +1,10 @@
 import { Form } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { api } from "./api";
-import { showApiFailure } from "./api/toast";
+import { loadRecent } from "./api/load-recent";
+import { showApiFailure } from "./components/failure-toast";
 import { TimerForm } from "./components/timer-form";
-import { continueNote } from "./lib/continue";
-import { loadRecent } from "./lib/recent";
+import { continueNote } from "./lib/names";
 
 // Continue Timer: the timer form, prefilled from the running entry, or from the newest entry
 // of the last 14 days when none runs (docs/architecture/README.md, "Starting and continuing").

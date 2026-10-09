@@ -56,10 +56,13 @@ export function findRow(title: string | RegExp) {
   return screen.findByRole("listitem", { name: title });
 }
 
-// Runs an action, and lets what it started settle.
+// Runs an action, and waits until what it started has finished.
 export async function runAction(container: HTMLElement, title: string | RegExp) {
   const button = within(container).getByRole("button", { name: title });
-  await act(async () => void fireEvent.click(button));
+  await act(async () => {
+    fireEvent.click(button);
+    await Promise.allSettled(raycast.running.splice(0));
+  });
 }
 
 export async function typeSearch(text: string) {

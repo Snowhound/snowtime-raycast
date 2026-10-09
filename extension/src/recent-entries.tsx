@@ -13,19 +13,25 @@ import {
 } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
-import { snowtimeUrl, type Organization, type RunningEntry } from "./api";
-import { showApiFailure } from "./api/toast";
+import { snowtimeUrl, type Organization } from "./api";
+import { loadRecent } from "./api/load-recent";
+import {
+  CopyDescriptionAction,
+  CopyTicketAction,
+  EditAndStartAction,
+  OpenSnowtimeAction,
+  RefreshAction,
+  StartAgainAction,
+  StopTimerAction,
+} from "./components/entry-actions";
 import { ErrorView } from "./components/error-view";
+import { showApiFailure } from "./components/failure-toast";
 import { OrganizationDropdown } from "./components/organization-dropdown";
 import { projectIcon } from "./components/project-icon";
-import { startTimer } from "./components/start";
-import { stopTimer } from "./components/stop";
-import { TimerForm } from "./components/timer-form";
-import { useElapsed } from "./components/use-elapsed";
-import { entryLabel } from "./lib/entries";
+import { useElapsed } from "./hooks/use-elapsed";
 import { formatDuration, formatTime } from "./lib/format";
-import { loadRecent } from "./lib/recent";
-import { groupByDay, matches, mergeByTicket, rowsFrom, totalOf, type EntryRow } from "./lib/rows";
+import { entryLabel } from "./lib/names";
+import { groupByDay, matches, mergeByTicket, rowsFrom, runningEntryOf, totalOf, type EntryRow } from "./lib/rows";
 
 // Recent Entries: the last 14 days of the user's entries, every one its own row, newest
 // first. Any of them starts again; the running one stops.
@@ -63,8 +69,8 @@ export default function Command() {
   }
 
   // After a start or a stop, so a second open shows the change at once.
-  async function afterChange(changed: Promise<boolean>) {
-    if (await changed) revalidate();
+  function afterChange(changed: boolean) {
+    if (changed) revalidate();
   }
 
   return (
@@ -155,51 +161,22 @@ function EntryItem({
   organization: Organization;
   running: EntryRow | undefined;
   now: Date;
-  onChange: (changed: Promise<boolean>) => void;
+  onChange: (changed: boolean) => void;
   // Refresh, which Show Entries' rows leave out: their list is the merged row's.
   onRefresh?: () => void;
 }) {
-  const { entry, project } = group.find(({ entry }) => entry.stoppedAt === null) ?? group[0];
+  const row = group.find(({ entry }) => entry.stoppedAt === null) ?? group[0];
+  const { entry } = row;
   const isRunning = entry.stoppedAt === null;
-  const runningEntry: RunningEntry | undefined = running && { ...running.entry, project: running.project };
+  const runningEntry = running && runningEntryOf(running);
   // Each entry's start and end, oldest first.
   const spans = group
     .map(({ entry }) => `${formatTime(entry.startedAt)} – ${entry.stoppedAt ? formatTime(entry.stoppedAt) : "now"}`)
     .reverse()
     .join(", ");
 
-  const stop = (shortcut?: Keyboard.Shortcut) => (
-    <Action
-      title="Stop Timer"
-      icon={Icon.Stop}
-      shortcut={shortcut}
-      onAction={() => onChange(stopTimer(runningEntry))}
-    />
-  );
-  const startAgain = (
-    <Action
-      title="Start Again"
-      icon={Icon.Play}
-      onAction={() =>
-        onChange(startTimer(organization, { description: entry.description, ticket: entry.ticket, project }))
-      }
-    />
-  );
-  const edit = (
-    <Action.Push
-      title="Edit and Start"
-      icon={Icon.Pencil}
-      target={
-        <TimerForm
-          navigationTitle="Edit and Start"
-          description={entry.description}
-          ticket={entry.ticket}
-          projectId={project?.id ?? null}
-          organizationId={organization.id}
-        />
-      }
-    />
-  );
+  const startAgain = <StartAgainAction row={row} organization={organization} onChange={onChange} />;
+  const edit = <EditAndStartAction row={row} organization={organization} navigationTitle="Edit and Start" />;
 
   return (
     <List.Item
@@ -220,9 +197,9 @@ function EntryItem({
       ]}
       actions={
         <ActionPanel>
-          {isRunning ? (
+          {isRunning && runningEntry ? (
             <>
-              {stop()}
+              <StopTimerAction running={runningEntry} onChange={onChange} />
               {edit}
               {startAgain}
             </>
@@ -249,38 +226,18 @@ function EntryItem({
                 }
               />
             )}
-            {entry.description && (
-              <Action.CopyToClipboard
-                title="Copy Description"
-                content={entry.description}
-                shortcut={{ modifiers: ["cmd"], key: "c" }}
-              />
-            )}
-            {entry.ticket && (
-              <Action.CopyToClipboard
-                title="Copy Ticket"
-                icon={Icon.Tag}
-                content={entry.ticket}
-                shortcut={Keyboard.Shortcut.Common.Copy}
-              />
-            )}
-            <Action.OpenInBrowser
-              title="Open in Snowtime"
-              url={snowtimeUrl(`/${organization.slug}`)}
-              shortcut={Keyboard.Shortcut.Common.Open}
-            />
+            <CopyDescriptionAction entry={entry} />
+            <CopyTicketAction entry={entry} />
+            <OpenSnowtimeAction organization={organization} title="Open in Snowtime" />
           </ActionPanel.Section>
-          {running && !isRunning && (
-            <ActionPanel.Section title="Running Timer">{stop({ modifiers: ["cmd"], key: "s" })}</ActionPanel.Section>
+          {runningEntry && !isRunning && (
+            <ActionPanel.Section title="Running Timer">
+              <StopTimerAction running={runningEntry} shortcut={Keyboard.Shortcut.Common.Save} onChange={onChange} />
+            </ActionPanel.Section>
           )}
           {onRefresh && (
             <ActionPanel.Section title="List">
-              <Action
-                title="Refresh"
-                icon={Icon.ArrowClockwise}
-                shortcut={Keyboard.Shortcut.Common.Refresh}
-                onAction={onRefresh}
-              />
+              <RefreshAction onRefresh={onRefresh} />
             </ActionPanel.Section>
           )}
         </ActionPanel>
@@ -301,7 +258,7 @@ function MergedEntries({
   day: string;
   organization: Organization;
   running: EntryRow | undefined;
-  onChange: (changed: Promise<boolean>) => void;
+  onChange: (changed: boolean) => void;
 }) {
   const [searchText, setSearchText] = useState("");
   const now = useElapsed(running?.entry.startedAt ?? null);

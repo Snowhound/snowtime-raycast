@@ -2,11 +2,16 @@ import { Action, ActionPanel, Form, Icon, Keyboard } from "@raycast/api";
 import { showFailureToast, useCachedPromise, useForm } from "@raycast/utils";
 import { useEffect, useRef, useState } from "react";
 import { api, snowtimeUrl } from "../api";
-import { showApiFailure } from "../api/toast";
-import { pickOrganization, rememberedOrganization, rememberedProject, rememberOrganization } from "../lib/organization";
 import { detectTicket, TICKET_PATTERN } from "../lib/tickets";
+import {
+  pickOrganization,
+  rememberedOrganization,
+  rememberedProject,
+  rememberOrganization,
+} from "../settings/organization";
+import { startTimer } from "../timer/start";
+import { showApiFailure } from "./failure-toast";
 import { projectIcon } from "./project-icon";
-import { startTimer } from "./start";
 
 const TICKET_INFO = "Left empty, a ticket key in the description, such as ABC-123, becomes the ticket.";
 const PROJECT_INFO = "Remembered for the next timer. Changing the organization clears it.";

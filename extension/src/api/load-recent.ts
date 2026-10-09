@@ -1,6 +1,6 @@
-import { api } from "../api";
-import { lastDays } from "./format";
-import { pickOrganization, rememberedOrganization } from "./organization";
+import { api } from "./index";
+import { lastDays } from "../lib/format";
+import { pickOrganization, rememberedOrganization } from "../settings/organization";
 
 // The user's own entries of the last `days` days in an organization, with its projects:
 // `organizationId` when the user picked one, else the remembered one. An admin can read

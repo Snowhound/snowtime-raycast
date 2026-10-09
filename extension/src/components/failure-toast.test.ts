@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { ApiError, NO_ANSWER } from "./errors";
-import { showApiFailure } from "./toast";
+import { ApiError, NO_ANSWER } from "../api/errors";
+import { showApiFailure } from "./failure-toast";
 
 const raycast = vi.hoisted(() => ({
   environment: { commandMode: "view" },

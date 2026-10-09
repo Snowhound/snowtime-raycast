@@ -1,19 +1,25 @@
-import { Action, ActionPanel, Color, getPreferenceValues, Icon, List, Keyboard } from "@raycast/api";
+import { Action, ActionPanel, Color, getPreferenceValues, Icon, Keyboard, List } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
 import { snowtimeUrl, type Organization, type RunningEntry } from "./api";
-import { showApiFailure } from "./api/toast";
+import { loadRecent } from "./api/load-recent";
+import {
+  CopyDescriptionAction,
+  EditAndStartAction,
+  OpenSnowtimeAction,
+  RefreshAction,
+  StartAgainAction,
+  StopTimerAction,
+} from "./components/entry-actions";
 import { ErrorView } from "./components/error-view";
+import { showApiFailure } from "./components/failure-toast";
 import { OrganizationDropdown } from "./components/organization-dropdown";
 import { projectIcon } from "./components/project-icon";
-import { startTimer } from "./components/start";
-import { stopTimer } from "./components/stop";
 import { TimerForm } from "./components/timer-form";
-import { useElapsed } from "./components/use-elapsed";
-import { entryLabel } from "./lib/entries";
+import { useElapsed } from "./hooks/use-elapsed";
 import { formatDuration, formatTime } from "./lib/format";
-import { loadRecent } from "./lib/recent";
-import { groupByDay, matches, newTimerFrom, suggestionsFrom, type EntryRow } from "./lib/rows";
+import { entryLabel } from "./lib/names";
+import { groupByDay, matches, newTimerFrom, runningEntryOf, suggestionsFrom, type EntryRow } from "./lib/rows";
 
 // Start Timer: a list whose search bar is the description, with the user's recent entries
 // to start again (docs/architecture/README.md, "Starting and continuing").
@@ -44,7 +50,7 @@ export default function Command() {
   const sections = groupByDay(found);
   // The running entry, if a suggestion holds it, for every row's Stop Timer.
   const running = data?.suggestions.find(({ entry }) => entry.stoppedAt === null);
-  const runningEntry: RunningEntry | undefined = running && { ...running.entry, project: running.project };
+  const runningEntry = running && runningEntryOf(running);
 
   return (
     <List
@@ -113,10 +119,10 @@ export default function Command() {
 }
 
 function SuggestionItem({
-  suggestion: { entry, project },
+  suggestion,
   organization,
   searchText,
-  running: runningEntry,
+  running,
   onRefresh,
 }: {
   suggestion: EntryRow;
@@ -126,8 +132,9 @@ function SuggestionItem({
   running: RunningEntry | undefined;
   onRefresh: () => void;
 }) {
-  const running = entry.stoppedAt === null;
-  const now = useElapsed(running ? entry.startedAt : null);
+  const { entry, project } = suggestion;
+  const isRunning = entry.stoppedAt === null;
+  const now = useElapsed(isRunning ? entry.startedAt : null);
   return (
     <List.Item
       icon={projectIcon(project)}
@@ -135,57 +142,25 @@ function SuggestionItem({
       subtitle={project?.name ?? "No project"}
       accessories={[
         ...(entry.description && entry.ticket ? [{ tag: entry.ticket }] : []),
-        running
+        isRunning
           ? { tag: { value: `Running ${formatDuration(entry, now)}`, color: Color.Orange } }
           : { text: formatTime(entry.startedAt), tooltip: "Last started" },
       ]}
       actions={
         <ActionPanel>
-          <Action
-            title={running ? "Start Again" : "Start Timer"}
-            icon={Icon.Play}
-            onAction={() => startTimer(organization, { description: entry.description, ticket: entry.ticket, project })}
+          <StartAgainAction
+            row={suggestion}
+            organization={organization}
+            title={isRunning ? "Start Again" : "Start Timer"}
           />
-          <Action.Push
-            title="Edit and Start"
-            icon={Icon.Pencil}
-            target={
-              <TimerForm
-                navigationTitle="Start Timer"
-                description={entry.description}
-                ticket={entry.ticket}
-                projectId={project?.id ?? null}
-                organizationId={organization.id}
-              />
-            }
-          />
+          <EditAndStartAction row={suggestion} organization={organization} navigationTitle="Start Timer" />
           <NewTimerAction text={searchText} organization={organization} />
-          {entry.description && (
-            <Action.CopyToClipboard
-              title="Copy Description"
-              content={entry.description}
-              shortcut={{ modifiers: ["cmd"], key: "c" }}
-            />
-          )}
-          <Action.OpenInBrowser
-            title="Open Snowtime"
-            url={snowtimeUrl(`/${organization.slug}`)}
-            shortcut={Keyboard.Shortcut.Common.Open}
-          />
-          <Action
-            title="Refresh"
-            icon={Icon.ArrowClockwise}
-            shortcut={Keyboard.Shortcut.Common.Refresh}
-            onAction={onRefresh}
-          />
-          {runningEntry && (
+          <CopyDescriptionAction entry={entry} />
+          <OpenSnowtimeAction organization={organization} title="Open Snowtime" />
+          <RefreshAction onRefresh={onRefresh} />
+          {running && (
             <ActionPanel.Section title="Running Timer">
-              <Action
-                title="Stop Timer"
-                icon={Icon.Stop}
-                shortcut={Keyboard.Shortcut.Common.Save}
-                onAction={() => stopTimer(runningEntry)}
-              />
+              <StopTimerAction running={running} shortcut={Keyboard.Shortcut.Common.Save} />
             </ActionPanel.Section>
           )}
         </ActionPanel>
