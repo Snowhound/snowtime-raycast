@@ -15,6 +15,8 @@ import {
   within,
 } from "./test/render";
 
+import { projects } from "./test/snowtime";
+
 const snowtime = useCommandTest({ name: "recent-entries" });
 
 function rowTitles(container: HTMLElement = document.body) {
@@ -62,6 +64,19 @@ describe("the list", () => {
     expect((await findRow("Landing page hero")).dataset.accessories).toBe("WEB-12 | Running | 1:37");
     expect((await findRow("Old footer")).dataset.subtitle).toBe("Archived project");
     expect((await findRow("Quarterly report")).dataset.subtitle).toBe("No project");
+  });
+
+  test("names an entry without a description by its ticket, which also shows as its tag", async () => {
+    snowtime().entry({
+      ticket: "TASK-123",
+      projectId: projects.website.id,
+      startedAt: at(0, 10),
+      stoppedAt: at(0, 10, 30),
+    });
+    snowtime().entry({ startedAt: at(0, 7), stoppedAt: at(0, 7, 10) });
+    await open();
+    expect((await findRow("TASK-123")).dataset.accessories).toBe("TASK-123 | 0:30");
+    expect((await findRow("No description")).dataset.accessories).toBe("0:10");
   });
 
   test("filters by description, ticket, or project", async () => {

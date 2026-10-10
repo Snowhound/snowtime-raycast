@@ -125,7 +125,8 @@
       dayTitle,
       label,
       hudName,
-      ticketTag: (e) => (e.description && e.ticket ? [{ tag: e.ticket }] : []),
+      // Every ticket shows as a tag, also when it names the entry, so tags line up (task 004).
+      ticketTag: (e) => (e.ticket ? [{ tag: e.ticket }] : []),
     },
   };
 })();

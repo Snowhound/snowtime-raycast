@@ -173,7 +173,8 @@ function SuggestionItem({
       title={entryLabel(entry)}
       subtitle={project?.name ?? "No project"}
       accessories={[
-        ...(entry.description && entry.ticket ? [{ tag: entry.ticket }] : []),
+        // Also when the ticket names the entry, so every row's ticket is a tag in one place.
+        ...(entry.ticket ? [{ tag: entry.ticket }] : []),
         isRunning
           ? { tag: { value: `Running ${formatDuration(entry, now)}`, color: Color.Orange } }
           : { text: formatTime(entry.startedAt), tooltip: "Last started" },

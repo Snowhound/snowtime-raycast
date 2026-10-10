@@ -280,8 +280,10 @@ Raycast supports only US English, so the extension does too, and doesn't transla
 - Durations are `h:mm`, as in the menu bar.
 - A description is optional, so an entry is named as Snowtime's `entryLabel` names it
   (`src/features/timer/entries.ts` there): by its description, else its ticket, else "No
-  description". A list shows the ticket as a tag only when the description names the entry,
-  so it doesn't appear twice. A HUD quotes a description, names a bare ticket as is, and
+  description". A list shows every ticket as a tag, also when the ticket names the entry
+  for want of a description, so tickets line up on the right; the key then shows twice,
+  as the name and the tag (decided 2026-10-10). The menu bar's Start Again lines show the
+  ticket only beside a description, as a menu has no column to line up. A HUD quotes a description, names a bare ticket as is, and
   says "a timer" or "the timer" when there is neither ("Started WEB-15", "Stopped the timer
   at 1:37").
 - Titles of commands, actions, and sections use Title Case; descriptions and toasts use
