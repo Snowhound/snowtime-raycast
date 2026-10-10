@@ -19,7 +19,15 @@
       "name": "start-timer",
       "title": "Start Timer",
       "description": "Start a timer, from a recent entry or a new description.",
-      "mode": "view"
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "description",
+          "placeholder": "Description",
+          "type": "text",
+          "required": false
+        }
+      ]
     },
     {
       "name": "continue-timer",

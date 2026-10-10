@@ -10,7 +10,7 @@
   </head>
   <body>
     <script>
-      // Start Timer (task 001, subtask 02; task 005): a list whose search bar is the
+      // Start Timer (task 001, subtask 02; tasks 005 and 006): a list whose search bar is the
       // description. Rows are recent entries to start again; with no match, ↵ opens the timer
       // form (timer-form.html) with what was typed. New Timer (⌘N) opens it from any row,
       // with what was typed or empty.
@@ -125,13 +125,14 @@
         };
       }
 
-      // The form the list pushes, as timer-form.html draws it.
-      function form({ description, ticket, project = remembered }) {
+      // The form the list pushes, as timer-form.html draws it; `back: false` when it opens in
+      // the list's place.
+      function form({ description, ticket, project = remembered, back = true }) {
         // With a description, the cursor waits in Ticket; an empty form starts at Description.
         return {
           type: "form",
           navigationTitle: "Start Timer",
-          back: true,
+          back,
           fields: [
             {
               type: "textfield",
@@ -177,6 +178,7 @@
           "With no match, ↵ opens the timer form with the typed description, a ticket key at its start split off, and the remembered project.",
           "Each description, ticket, and project shows once here, at its newest entry; Recent Entries lists every entry.",
           "New Timer (⌘N), in every row's actions, opens the form as the New timer row does: with the typed text, or empty when nothing is typed, and the remembered project. While a suggestion runs, every row also has Stop Timer (⌘S).",
+          "From Raycast's root search, Start Timer takes an optional Description argument (Tab after the command), and as a fallback command it takes the root search's text. With a match among the suggestions, the list opens with the text in the search bar, as if typed there. With none, the timer form opens in the list's place, prefilled, so Esc goes back to root search. Start Timer decides once, on the fresh suggestions, never while typing in the list; until then the list stays empty with its loading bar.",
         ],
         states: {
           Loading: () => list({ isLoading: true, sections: [] }),
@@ -189,6 +191,19 @@
               text: "inbox",
               extra: [{ title: "New", items: [newTimerRow("inbox", "Form: from the search")] }],
             }),
+          // Root search: Start Timer, Tab, "inbox", ↵; or "inbox" with Start Timer as the fallback.
+          // Until the fresh suggestions decide between the list and the form, the list stays
+          // empty with its loading bar, so cached rows don't flash before a form.
+          "Opened with an argument: loading": () => list({ text: "inbox", isLoading: true, sections: [] }),
+          "Opened with an argument: matches": () =>
+            list({
+              text: "inbox",
+              extra: [{ title: "New", items: [newTimerRow("inbox", "Form: from the search")] }],
+            }),
+          // Root search: Start Timer, Tab, "OPS-9 Budget review", ↵. Nothing matches, so the form
+          // opens instead of the list.
+          "Opened with an argument: no match": () =>
+            form({ description: "Budget review", ticket: "OPS-9", back: false }),
           "Typing: no match": () =>
             list({
               text: "Quarterly report",

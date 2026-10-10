@@ -189,6 +189,18 @@ Start Timer is a list whose search bar is the description (decided 2026-10-03). 
   the only row, so ↵ pushes the timer form with the text as the description, a ticket key
   at its start split off by the rules in "Tickets from the description", and the
   remembered project.
+- Text from Raycast's root search fills the search bar as if typed there (decided
+  2026-10-10): the optional `description` argument (Start Timer, Tab, the text), or
+  `fallbackText` when the user runs Start Timer as a fallback command. With a match, ↵
+  restarts it with its ticket and project. With none, the timer form opens in the list's
+  place, prefilled as the New timer row would, so Esc goes back to root search. Start
+  Timer decides once, on the fresh suggestions rather than the cached ones, which could
+  miss an entry made since. Until then the list stays empty with its loading bar, so
+  cached rows don't flash before the form. Typing in the list never opens the form by
+  itself, as it would mid-word. A failed load or no organizations stay in the list, with
+  their empty view. Starting a new timer straight from the argument was rejected: it would
+  skip the matching entries, so "inbox" wouldn't restart "Inbox triage" with its ticket
+  and project, and a typo would start a timer.
 - New Timer (`⌘N`), in every row's actions and the empty view, opens the timer form as the
   New timer row does: with the typed text, or empty when nothing is typed, and the
   remembered project. So the user can start a new timer without typing first, and with

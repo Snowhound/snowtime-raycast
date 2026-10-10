@@ -31,6 +31,11 @@ stop a timer need `write`.
 
 Starting a timer stops the running one first, wherever it runs, as in the web app.
 
+To skip a step, type the description in Raycast's root search: Start Timer, Tab, then the
+text. Start Timer opens with the matching recent entries, or, when none matches, straight
+in the form. With Start Timer set as a fallback command, any text in the root search works
+the same way.
+
 ## Tickets
 
 Leave Ticket empty in the timer form, and a ticket key in the description, such as

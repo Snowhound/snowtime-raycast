@@ -1,6 +1,6 @@
-import { Action, ActionPanel, Color, getPreferenceValues, Icon, Keyboard, List } from "@raycast/api";
+import { Action, ActionPanel, Color, getPreferenceValues, Icon, Keyboard, List, type LaunchProps } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { snowtimeUrl, type Organization, type RunningEntry } from "./api";
 import { loadRecent } from "./api/load-recent";
 import {
@@ -35,11 +35,17 @@ async function loadSuggestions(organizationId: string | undefined, days: number)
   return { organizations, organization, suggestions: suggestionsFrom(entries, projects) };
 }
 
-export default function Command() {
+export default function Command(props: LaunchProps<{ arguments: Arguments.StartTimer }>) {
   const { suggestionRange } = getPreferenceValues<Preferences>();
   const days = Number(suggestionRange) || 2;
   const [organizationId, setOrganizationId] = useState<string>();
-  const [searchText, setSearchText] = useState("");
+  // Text from Raycast's root search: the Description argument, or the root search's text when
+  // Start Timer runs as a fallback command. It fills the search bar as if typed there.
+  const [launchText] = useState(() => (props.arguments.description || props.fallbackText || "").trim());
+  const [searchText, setSearchText] = useState(launchText);
+  // Whether the launch text opens the timer form instead: decided once, when the fresh
+  // suggestions arrive, and only when none matches it.
+  const [opensForm, setOpensForm] = useState<boolean>();
 
   const { data, isLoading, error, revalidate } = useCachedPromise(loadSuggestions, [organizationId, days], {
     onError: (error) => showApiFailure(error, { title: "Couldn't load recent entries" }),
@@ -52,13 +58,38 @@ export default function Command() {
   const running = data?.suggestions.find(({ entry }) => entry.stoppedAt === null);
   const runningEntry = running && runningEntryOf(running);
 
+  useEffect(() => {
+    if (opensForm !== undefined || !launchText || isLoading) return;
+    const suggestions = data?.suggestions ?? [];
+    setOpensForm(!error && !!data?.organization && !suggestions.some((row) => matches(row, launchText)));
+  }, [opensForm, launchText, isLoading, data, error]);
+
+  // Until then the list stays empty with its loading bar, so cached rows don't show for a
+  // moment before the form replaces them.
+  const deciding = !!launchText && opensForm === undefined;
+
+  // In the list's place, so Esc goes back to root search (docs/architecture/README.md,
+  // "Starting and continuing").
+  if (opensForm && organization) {
+    const { description, ticket } = newTimerFrom(launchText);
+    return (
+      <TimerForm
+        navigationTitle="Start Timer"
+        description={description}
+        ticket={ticket}
+        organizationId={organization.id}
+      />
+    );
+  }
+
   return (
     <List
       navigationTitle="Start Timer"
       searchBarPlaceholder="What are you working on?"
       filtering={false}
+      searchText={searchText}
       onSearchTextChange={setSearchText}
-      isLoading={isLoading}
+      isLoading={isLoading || deciding}
       searchBarAccessory={
         <OrganizationDropdown
           organizations={data?.organizations ?? []}
@@ -67,7 +98,7 @@ export default function Command() {
         />
       }
     >
-      {!data && isLoading ? null : error && !data ? (
+      {deciding || (!data && isLoading) ? null : error && !data ? (
         <ErrorView error={error} onRefresh={revalidate} />
       ) : data && !organization ? (
         <List.EmptyView
@@ -95,6 +126,7 @@ export default function Command() {
         />
       )}
       {organization &&
+        !deciding &&
         sections.map(({ title, rows }) => (
           <List.Section key={title} title={title}>
             {rows.map((suggestion) => (
@@ -109,7 +141,7 @@ export default function Command() {
             ))}
           </List.Section>
         ))}
-      {organization && searchText.trim() && (
+      {organization && !deciding && searchText.trim() && (
         <List.Section title={found.length > 0 ? "New" : undefined}>
           <NewTimerItem text={searchText} organization={organization} />
         </List.Section>

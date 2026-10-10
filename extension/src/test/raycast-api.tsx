@@ -252,7 +252,14 @@ function Actions({ actions }: { actions?: ReactNode }) {
 
 const ListContext = createContext({ rows: 0, add: () => () => {} });
 
-export function List({ children, searchBarPlaceholder, onSearchTextChange, isLoading, searchBarAccessory }: Props) {
+export function List({
+  children,
+  searchBarPlaceholder,
+  searchText,
+  onSearchTextChange,
+  isLoading,
+  searchBarAccessory,
+}: Props) {
   const [rows, setRows] = useState(0);
   const add = useCallback(() => {
     setRows((n) => n + 1);
@@ -264,6 +271,8 @@ export function List({ children, searchBarPlaceholder, onSearchTextChange, isLoa
         role="searchbox"
         aria-label="Search"
         placeholder={searchBarPlaceholder}
+        // Controlled when the command sets `searchText`, as Raycast's search bar is.
+        {...(searchText === undefined ? {} : { value: searchText })}
         onChange={(event) => onSearchTextChange?.(event.target.value)}
       />
       {searchBarAccessory}

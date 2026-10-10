@@ -6,13 +6,13 @@ API key.
 
 ## Commands
 
-| Command        | Mode     | Does                                                                                            |
-| -------------- | -------- | ----------------------------------------------------------------------------------------------- |
-| Start Timer    | View     | Type a description; start a matching recent entry again, or open the form for a new one         |
-| Continue Timer | View     | The same form, prefilled from the running or the newest entry                                   |
-| Stop Timer     | No view  | Stops the running timer and confirms with a HUD                                                 |
-| Recent Entries | View     | The last 14 days of entries, newest first, each one shown or merged by ticket; starts any again |
-| Running Timer  | Menu bar | The running timer's elapsed time; stops it, refreshes, or starts a recent entry again           |
+| Command        | Mode     | Does                                                                                                            |
+| -------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
+| Start Timer    | View     | Type a description, here or in root search; start a matching recent entry again, or open the form for a new one |
+| Continue Timer | View     | The same form, prefilled from the running or the newest entry                                                   |
+| Stop Timer     | No view  | Stops the running timer and confirms with a HUD                                                                 |
+| Recent Entries | View     | The last 14 days of entries, newest first, each one shown or merged by ticket; starts any again                 |
+| Running Timer  | Menu bar | The running timer's elapsed time; stops it, refreshes, or starts a recent entry again                           |
 
 Starting a timer stops the running one first, wherever it runs, as in the web app.
 

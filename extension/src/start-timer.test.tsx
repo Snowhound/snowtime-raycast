@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
+import type { LaunchProps } from "@raycast/api";
 import { describe, expect, test } from "vitest";
 import Command from "./start-timer";
 import {
+  at,
   choose,
   findRow,
   raycast,
@@ -26,8 +28,16 @@ function sectionOf(row: HTMLElement) {
   return row.closest('[role="group"]')?.getAttribute("aria-label");
 }
 
-async function open() {
-  renderCommand(<Command />);
+type Props = LaunchProps<{ arguments: Arguments.StartTimer }>;
+
+// Start Timer's launch props as Raycast passes them: the Description argument empty unless
+// given, and `fallbackText` when it runs as a fallback command.
+function launch({ description = "", fallbackText }: { description?: string; fallbackText?: string } = {}) {
+  return { arguments: { description }, launchType: "userInitiated", fallbackText } as unknown as Props;
+}
+
+async function open(options?: { description?: string; fallbackText?: string }) {
+  renderCommand(<Command {...launch(options)} />);
   await settled();
 }
 
@@ -168,6 +178,8 @@ describe("New Timer", () => {
 
     await typeSearch("Quarterly");
     expect(rowTitles()).toEqual(["Quarterly"]);
+    // Typed text never opens the form by itself, only text from root search.
+    expect(screen.queryByRole("form")).toBeNull();
   });
 });
 
@@ -230,4 +242,73 @@ test("the organization picker shows another organization's entries and remembers
   await choose("Organization", orgs.harbor.id);
   await waitFor(() => expect(rowTitles()).toEqual(["Audit prep"]));
   expect(raycast.localStorage.get("organizationId")).toBe(orgs.harbor.id);
+});
+
+describe("text from root search", () => {
+  test("the Description argument opens the list as if typed", async () => {
+    snowtime().seedWeek();
+    await open({ description: "inbox" });
+    expect(screen.getByRole("searchbox")).toHaveProperty("value", "inbox");
+    expect(rowTitles()).toEqual(["Inbox triage", "inbox"]);
+    await runAction(await findRow("Inbox triage"), "Start Timer");
+    expect(snowtime().running()).toMatchObject({ description: "Inbox triage", ticket: "OPS-7" });
+  });
+
+  test("without a match opens the timer form in the list's place, the ticket key split off", async () => {
+    snowtime().seedWeek();
+    await open({ description: "OPS-9 Budget review" });
+    const form = await screen.findByRole("form", { name: "Start Timer" });
+    expect(within(form).getByLabelText("Description")).toHaveProperty("value", "Budget review");
+    expect(within(form).getByLabelText("Ticket")).toHaveProperty("value", "OPS-9");
+    expect(screen.queryByRole("searchbox")).toBeNull();
+
+    await runAction(form, "Start Timer");
+    expect(snowtime().running()).toMatchObject({ description: "Budget review", ticket: "OPS-9" });
+  });
+
+  test("shows an empty, loading list until the fresh suggestions decide, not the cached rows", async () => {
+    snowtime().seedWeek();
+    const earlier = renderCommand(<Command {...launch()} />);
+    await settled();
+    earlier.unmount();
+
+    renderCommand(<Command {...launch({ description: "inbox" })} />);
+    expect(screen.queryAllByRole("listitem")).toEqual([]);
+    expect(document.querySelector('[data-view="list"]')?.getAttribute("aria-busy")).toBe("true");
+    expect(await findRow("Inbox triage")).toBeDefined();
+  });
+
+  test("is matched against the fresh suggestions, not the cached ones", async () => {
+    snowtime().seedWeek();
+    // An earlier open caches the suggestions; a matching entry is made in the web app since.
+    const earlier = renderCommand(<Command {...launch()} />);
+    await settled();
+    earlier.unmount();
+    snowtime().entry({ description: "Budget review", startedAt: at(0, 10), stoppedAt: at(0, 10, 30) });
+
+    await open({ description: "budget" });
+    expect(await findRow("Budget review")).toBeDefined();
+    expect(screen.queryByRole("form")).toBeNull();
+  });
+
+  test("stays in the list when the suggestions fail to load", async () => {
+    snowtime().answerNext("offline", /entries$/);
+    await open({ description: "Budget review" });
+    expect(await screen.findByRole("status", { name: "Can't reach snowtime.example.com" })).toBeDefined();
+    expect(screen.queryByRole("form")).toBeNull();
+  });
+
+  test("the root search's text does the same when Start Timer is the fallback", async () => {
+    snowtime().seedWeek();
+    await open({ fallbackText: "standup" });
+    expect(screen.getByRole("searchbox")).toHaveProperty("value", "standup");
+    expect(rowTitles()).toEqual(["Standup", "standup"]);
+  });
+
+  test("can be changed like typed text", async () => {
+    snowtime().seedWeek();
+    await open({ description: "inbox" });
+    await typeSearch("");
+    expect(rowTitles()).toEqual(["Landing page hero", "Standup", "Inbox triage", "Hero copy"]);
+  });
 });
