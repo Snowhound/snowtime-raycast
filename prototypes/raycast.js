@@ -87,6 +87,11 @@
     if (name === "SnowtimeTemplate" && window.MENU_BAR_MARK) {
       return `<span class="mark" title="Template image">${window.MENU_BAR_MARK}</span>`;
     }
+    // The same mark with an error badge, from the extension's PNG, tinted like the mark:
+    // inverted in dark mode as the tint does.
+    if (name === "SnowtimeTemplateError") {
+      return '<span class="mark" title="Template image: menu-bar-icon-error.png"><img src="../extension/assets/menu-bar-icon-error.png" alt=""></span>';
+    }
     const style = color ? ` style="color:${colors[color] ?? color}"` : "";
     return `<svg class="icon" viewBox="0 0 24 24"${style} aria-hidden="true"><title>Icon.${esc(name)}</title>${paths[name] ?? paths.Circle}</svg>`;
   }

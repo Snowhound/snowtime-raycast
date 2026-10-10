@@ -1,6 +1,6 @@
 # 010: The menu bar keeps the last failed read
 
-Status: in-progress
+Status: done
 
 A failed read shows in the menu only in the run that made it. Reopening the menu runs the
 command again from the cache, so after a failed Refresh, or a failed background read, the
@@ -18,5 +18,8 @@ menu shows the last known timer as if nothing failed. The fix keeps the failure 
 - [x] A run from the cache shows the saved failure, with the time of the last successful
       read: "Showing the timer as of 10:37 AM."
 - [x] The error line opens the preferences for an invalid key, else tries again
+- [x] While a failure is kept, the menu bar shows the mark with an exclamation badge, one
+      color and tinted like the normal icon (`assets/menu-bar-icon-error.png`); the title
+      stays the elapsed time (2026-10-10)
 - [x] `docs/architecture/README.md` ("The menu bar") records the decision
-- [ ] A person checks it in Raycast: Refresh with a wrong Instance URL, then reopen the menu
+- [x] A person checks it in Raycast: Refresh with a wrong Instance URL, then reopen the menu

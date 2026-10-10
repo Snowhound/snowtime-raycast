@@ -186,6 +186,14 @@ vanish at the next open, and the menu would show an old timer as if nothing fail
 - The error line has an action, so Raycast draws it as an item rather than greyed out like
   the lines without one: it opens the extension's preferences for an invalid key, and
   otherwise tries again, as Refresh does.
+- While a failure is kept, the menu bar shows `assets/menu-bar-icon-error.png`, the mark of
+  `menu-bar-icon.png` with a badge in its bottom-right corner, an exclamation mark cut out
+  of a disc, so the failure shows with the menu closed. The title stays the elapsed time.
+  Like the normal icon, it is one color and tinted with `Color.PrimaryText`, so it follows
+  the menu bar's color. A red badge was rejected: a tint colors every pixel, so a red badge
+  needs an untinted icon, and an untinted icon can't follow the menu bar. Raycast picks an
+  `@dark` image by its own appearance, which showed a black mark on a dark bar, and a single
+  black or grey mark didn't look right.
 
 ## Starting and continuing
 

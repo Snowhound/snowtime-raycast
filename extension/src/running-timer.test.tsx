@@ -222,6 +222,13 @@ describe("a kept failure", () => {
     expect(snowtime().calls().length).toBe(calls);
   });
 
+  test("puts a badge on the menu bar's mark, and the title stays the elapsed time", async () => {
+    await failRefreshAfterARead();
+    await run();
+    expect(menu().dataset.icon).toBe("menu-bar-icon-error.png");
+    expect(menu().dataset.title).toBe("1:37");
+  });
+
   test("shows in background runs between reads", async () => {
     await failRefreshAfterARead();
     await run({ background: true });
@@ -236,6 +243,7 @@ describe("a kept failure", () => {
     view.unmount();
     await run();
     expect(lines()[0]).toBe("Landing page hero");
+    expect(menu().dataset.icon).toBe("menu-bar-icon.png");
   });
 
   test("goes away when another command starts a timer", async () => {

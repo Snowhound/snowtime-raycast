@@ -39,7 +39,11 @@ import { stopTimer } from "./timer/stop";
 // start another (docs/architecture/README.md, "The menu bar").
 
 const DAYS = 14;
+// The mark, tinted in the menu bar's text color. With a kept failure, the same mark with an
+// exclamation badge, so the failure shows with the menu closed. Both are one color, as the
+// tint colors every pixel; an untinted icon can't follow the menu bar's color.
 const ICON = { source: "menu-bar-icon.png", tintColor: Color.PrimaryText };
+const ERROR_ICON = { source: "menu-bar-icon-error.png", tintColor: Color.PrimaryText };
 
 // Whether this run reads the API: every fifth background run, and any run before anything
 // is cached. Opening the menu and the other commands' refreshes show the cache, so opening
@@ -153,7 +157,7 @@ export default function Command(props: LaunchProps<{ launchContext: MenuBarConte
 
   return (
     <MenuBarExtra
-      icon={ICON}
+      icon={failure ? ERROR_ICON : ICON}
       title={running ? formatDuration(running) : undefined}
       tooltip={running ? `${entryLabel(running)} · ${formatDuration(running)}` : "No timer running"}
       isLoading={timer.isLoading || recent.isLoading || busy}

@@ -99,7 +99,8 @@
             ];
         return {
           type: "menubar",
-          icon: "SnowtimeTemplate",
+          // With a failure, the mark carries a badge; the title stays the elapsed time.
+          icon: error ? "SnowtimeTemplateError" : "SnowtimeTemplate",
           title: entry ? format.duration(entry) : undefined,
           tooltip: entry ? `${format.label(entry)} · ${format.duration(entry)}` : "No timer running",
           open,
@@ -119,7 +120,7 @@
           "The title is the elapsed time as h:mm, counted on the Mac and moved once a minute; with no timer running, the icon stands alone.",
           "The icon is a template image, so macOS tints it to match the menu bar. Hover the item for the description.",
           "⌘1–⌘5 start a recent entry again while the menu is open; the command's Show Start Again preference hides that section. Lines without an action are information only.",
-          "A failed read stays in the menu until the API answers again (task 010): reopening the menu, or a background run between reads, shows the same lines, with the time of the last successful read. The error line runs its fix: it tries again, as Refresh does, or for an invalid key opens the extension's preferences.",
+          "A failed read stays in the menu until the API answers again (task 010): reopening the menu, or a background run between reads, shows the same lines, with the time of the last successful read. The error line runs its fix: it tries again, as Refresh does, or for an invalid key opens the extension's preferences. While a failure is kept, the menu bar's mark carries an exclamation badge, so it shows with the menu closed; the title stays the elapsed time. The icon is one color, tinted like the normal one, so it follows the menu bar.",
         ],
         states: {
           "Running, menu closed": () => bar({ open: false }),
@@ -153,6 +154,12 @@
             }),
           // The menu reopened, or a background run passed, after that failed Refresh: no new
           // request, so the failure and the time of the last read stay.
+          // The badge shows the failure while the menu is closed.
+          "Error: no connection, menu closed": () =>
+            bar({
+              open: false,
+              error: { title: "Can't reach snowtime.snowhound.eu", detail: "Showing the timer as of 10:37 AM." },
+            }),
           "Error: no connection, menu reopened": () =>
             bar({
               error: {
