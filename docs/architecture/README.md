@@ -13,6 +13,7 @@ user's approval, and the task that depends on it names it.
 | Packages   | npm, because the Raycast Store builds from `package-lock.json`                                                         |
 | Lint       | `ray lint`: ESLint with Raycast's config, Prettier, and the Store's manifest and icon checks                           |
 | Tests      | Vitest for every module and command, against stand-ins for Raycast and Snowtime ("Tests")                              |
+| CI         | GitHub Actions on every push to `main` and pull request: lint, the distribution build, and the tests                   |
 | Prototypes | Static HTML in `prototypes/`, approved before a command is built (`prototypes/README.md`)                              |
 
 The only other runtime dependency is `uuid`, for UUID v7 entry ids.

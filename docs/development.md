@@ -35,13 +35,21 @@ before its task is done: every state its prototype shows, in light and dark, and
 the local Snowtime. The prototypes are checked by agents first
 (`docs/skills/ui-review/SKILL.md`).
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs `npm ci`, `npm run lint`, `npm run build`, and `npm test` in
+`extension/` on Node 22, for every push to `main` and every pull request. The build comes
+before the tests: it writes `raycast-env.d.ts`, the generated types of the preferences and
+arguments, which git ignores and the tests' type-check needs. `ray build` without `-e dist`
+skips the type-check, so `npm run build` passes `-e dist`.
+
 ## Scripts
 
-| Command            | Does                                                        |
-| ------------------ | ----------------------------------------------------------- |
-| `npm run dev`      | Runs the extension in Raycast and rebuilds it on save       |
-| `npm run build`    | Builds the extension as the Store will                      |
-| `npm run lint`     | `ray lint`: the manifest, the icons, ESLint, and Prettier   |
-| `npm test`         | Type-checks the tests, then runs them all in Europe/Tallinn |
-| `npm run fix-lint` | `ray lint --fix`                                            |
-| `npm run publish`  | Opens the pull request to `raycast/extensions` (task 004)   |
+| Command            | Does                                                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `npm run dev`      | Runs the extension in Raycast and rebuilds it on save                                                      |
+| `npm run build`    | `ray build -e dist`: type-checks and builds the extension as the Store does                                |
+| `npm run lint`     | `ray lint`: the manifest, the icons, ESLint, and Prettier                                                  |
+| `npm test`         | Type-checks the tests, then runs them all in Europe/Tallinn; builds first if `raycast-env.d.ts` is missing |
+| `npm run fix-lint` | `ray lint --fix`                                                                                           |
+| `npm run publish`  | Opens the pull request to `raycast/extensions` (task 004)                                                  |
