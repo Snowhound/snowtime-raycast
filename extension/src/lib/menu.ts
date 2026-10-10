@@ -1,5 +1,6 @@
 import { ApiError, NO_ANSWER } from "../api/errors";
 import type { Entry, Project } from "../api/types";
+import { formatTime } from "./format";
 import { asTitle } from "./names";
 import { suggestionsFrom } from "./rows";
 
@@ -26,14 +27,32 @@ export function startAgainFrom(entries: Entry[], projects: Project[], running: E
     .slice(0, 5);
 }
 
-// The menu's lines for a failed read: what failed, and what to do or what it shows instead.
-export function menuError(error: Error, host: string, hasCachedTimer: boolean) {
-  const fallback = hasCachedTimer ? "Showing the last known timer." : undefined;
+// The menu's lines for a failed read: what failed, and what to do or what it shows instead,
+// with the time the cached timer was last read. `fix` is what the error line does when
+// clicked: open the preferences for an invalid key, else try again.
+export function menuError(
+  error: Error,
+  host: string,
+  { hasCachedTimer, answeredAt }: { hasCachedTimer: boolean; answeredAt?: string },
+) {
+  const fallback = hasCachedTimer
+    ? answeredAt
+      ? `Showing the timer as of ${formatTime(answeredAt)}.`
+      : "Showing the last known timer."
+    : undefined;
   if (error instanceof ApiError && error.status === 401) {
-    return { title: asTitle(error.message), detail: "Check it under Configure Extension." };
+    return {
+      title: asTitle(error.message),
+      detail: "Check it under Configure Extension.",
+      fix: "preferences" as const,
+    };
   }
   if (error instanceof ApiError && error.code === NO_ANSWER) {
-    return { title: `Can't reach ${host}`, detail: fallback ?? "Check your connection or the instance URL." };
+    return {
+      title: `Can't reach ${host}`,
+      detail: fallback ?? "Check your connection or the instance URL.",
+      fix: "refresh" as const,
+    };
   }
-  return { title: asTitle(error.message), detail: fallback ?? "Refresh to try again." };
+  return { title: asTitle(error.message), detail: fallback ?? "Refresh to try again.", fix: "refresh" as const };
 }

@@ -170,6 +170,31 @@ answer; that is accepted (decided 2026-10-03), and the next open shows it. Recen
 Refresh action (`⌘R`) as well. A separate refresh command would only repeat the menu's
 Refresh, so there is none.
 
+A failed read stays in the menu until the API answers again (decided 2026-10-10). Most
+runs show the cache without a request, so a failure kept only in the run that met it would
+vanish at the next open, and the menu would show an old timer as if nothing failed:
+
+- A failed read of the timer or the Start Again entries, from Refresh or a background
+  read, and a failure of the menu's own Start Again or Stop Timer, saves its status, code,
+  and message in the `Cache`. A start or stop that fails in another command shows its
+  toast there and saves nothing.
+- Any successful answer clears it and saves its time: a read, or a start or stop from any
+  command.
+- The menu shows the saved failure, from whichever run met it, so an answer within the
+  same run, such as a retry, clears it at once. With a cached timer, the detail line gives
+  the time of the last answer: "Showing the timer as of 10:37 AM."
+- The error line has an action, so Raycast draws it as an item rather than greyed out like
+  the lines without one: it opens the extension's preferences for an invalid key, and
+  otherwise tries again, as Refresh does.
+- While a failure is kept, the menu bar shows `assets/menu-bar-icon-error.png`, the mark of
+  `menu-bar-icon.png` with a badge in its bottom-right corner, an exclamation mark cut out
+  of a disc, so the failure shows with the menu closed. The title stays the elapsed time.
+  Like the normal icon, it is one color and tinted with `Color.PrimaryText`, so it follows
+  the menu bar's color. A red badge was rejected: a tint colors every pixel, so a red badge
+  needs an untinted icon, and an untinted icon can't follow the menu bar. Raycast picks an
+  `@dark` image by its own appearance, which showed a black mark on a dark bar, and a single
+  black or grey mark didn't look right.
+
 ## Starting and continuing
 
 Start Timer is a list whose search bar is the description (decided 2026-10-03). Raycast's

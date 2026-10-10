@@ -390,9 +390,15 @@ Form.Description = function Description({ text }: Props) {
 // The menu bar: its title in `data-title`, and its items as buttons, or text when they have
 // no action.
 
-export function MenuBarExtra({ title, tooltip, isLoading, children }: Props) {
+export function MenuBarExtra({ icon, title, tooltip, isLoading, children }: Props) {
   return (
-    <div data-view="menu-bar" data-title={title ?? ""} title={tooltip} aria-busy={!!isLoading}>
+    <div
+      data-view="menu-bar"
+      data-icon={icon?.source ?? icon}
+      data-title={title ?? ""}
+      title={tooltip}
+      aria-busy={!!isLoading}
+    >
       {children}
     </div>
   );

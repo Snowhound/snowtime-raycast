@@ -56,29 +56,40 @@ describe("startAgainFrom", () => {
 
 describe("menuError", () => {
   const host = "snowtime.example.com";
+  const cached = { hasCachedTimer: true };
 
-  test("an invalid key points to the preferences", () => {
+  test("an invalid key points to the preferences, which the line opens", () => {
     const error = new ApiError(401, "UNAUTHENTICATED", "Invalid API key.", "GET");
-    expect(menuError(error, host, true)).toEqual({
+    expect(menuError(error, host, cached)).toEqual({
       title: "Invalid API key",
       detail: "Check it under Configure Extension.",
+      fix: "preferences",
     });
   });
 
-  test("no connection names the host, and says the cached timer shows", () => {
-    const error = new ApiError(null, NO_ANSWER, `Can't reach ${host}.`, "GET");
-    expect(menuError(error, host, true)).toEqual({
+  test("no connection names the host, says the cached timer shows, and tries again", () => {
+    const error = new ApiError(null, NO_ANSWER, "Can't reach snowtime.example.com.", "GET");
+    expect(menuError(error, host, cached)).toEqual({
       title: "Can't reach snowtime.example.com",
       detail: "Showing the last known timer.",
+      fix: "refresh",
     });
-    expect(menuError(error, host, false).detail).toBe("Check your connection or the instance URL.");
+    expect(menuError(error, host, { hasCachedTimer: false }).detail).toBe("Check your connection or the instance URL.");
+  });
+
+  test("says when the cached timer was last read", () => {
+    const error = new ApiError(null, NO_ANSWER, "Can't reach snowtime.example.com.", "GET");
+    // The tests run in Europe/Tallinn (vitest.config.mts): 07:37 UTC is 10:37 AM.
+    const answeredAt = "2026-10-05T07:37:00.000Z";
+    expect(menuError(error, host, { ...cached, answeredAt }).detail).toBe("Showing the timer as of 10:37 AM.");
   });
 
   test("any other failure shows the API's message", () => {
     const error = new ApiError(503, "UNAVAILABLE", "Snowtime is unavailable.", "GET");
-    expect(menuError(error, host, false)).toEqual({
+    expect(menuError(error, host, { hasCachedTimer: false })).toEqual({
       title: "Snowtime is unavailable",
       detail: "Refresh to try again.",
+      fix: "refresh",
     });
   });
 });
