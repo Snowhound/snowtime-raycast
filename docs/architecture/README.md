@@ -341,9 +341,9 @@ Those that shape the design:
 - No analytics and no Keychain access.
 - `README.md` explains the setup, because it needs an API key, and opens with the icon as
   Linear's does. `help.md`, beside `package.json`, repeats the setup in short, and Raycast
-  shows it next to the form that asks for the API key (decided 2026-10-10). Screenshots go in
-  `metadata/`: three to six PNGs at 2000 × 1250. `CHANGELOG.md` uses
-  `## [Title] - {PR_MERGE_DATE}`.
+  shows it next to the form that asks for the API key (decided 2026-10-10). Screenshots go
+  in `metadata/`: three to six PNGs at 2000 × 1250. `CHANGELOG.md` uses `## [Title] -
+  {PR_MERGE_DATE}`.
 
 ## Repository and publishing
 
