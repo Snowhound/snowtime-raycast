@@ -323,6 +323,12 @@ Those that shape the design:
 - `author` is the publisher's Raycast username (`kustav_prants`), and `license` is `MIT`.
 - `owner` is the Raycast organization `snowhound`, and `access` is `public`, so the
   extension is listed in the public Store rather than only inside the organization.
+  `raycast/extensions` fails the pull request of an extension with an `owner` unless its
+  folder is in `.github/public_raycast_extensions.txt` ("We are restricting public
+  organisation extensions for the moment"). The pull request adds `snowtime` to that list
+  and says why, as Done Bear, MuteDeck, and OpenQR did in 2026; if Raycast declines, the
+  fallback is to drop `owner` and `access` and publish under `author` (checked
+  2026-10-10).
 - The icon is a 512 × 512 PNG that works in light and dark: `assets/extension-icon.png`,
   with `extension-icon@dark.png` beside it.
 - Command titles are `<verb> <noun>` or `<noun>` in Title Case, without articles: Start

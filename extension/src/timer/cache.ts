@@ -76,7 +76,7 @@ export interface MenuBarContext {
 // nothing: launching the command that is running replaces it, ending the action midway
 // ("Worker exited"), and the open menu updates its own state.
 export async function refreshMenuBar() {
-  if (environment.commandName === MENU_BAR) return;
+  if (environment.entryPointName === MENU_BAR) return;
   const context: MenuBarContext = { fromCache: true };
   try {
     await launchCommand({ name: MENU_BAR, type: LaunchType.Background, context });

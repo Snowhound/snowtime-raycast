@@ -38,7 +38,7 @@ export async function stopTimer(running?: RunningEntry) {
     }
   } catch (error) {
     // The menu bar keeps its own failures; another command shows them in its window.
-    if (environment.commandMode === "menu-bar") noteFailure(error);
+    if (environment.entryPointMode === "menu-bar") noteFailure(error);
     if (before) await update(before);
     await showApiFailure(error, { title: "Couldn't stop timer", organizationSlug: await slugOf(timer) });
     return false;

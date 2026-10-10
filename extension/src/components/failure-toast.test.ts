@@ -3,7 +3,7 @@ import { ApiError, NO_ANSWER } from "../api/errors";
 import { showApiFailure } from "./failure-toast";
 
 const raycast = vi.hoisted(() => ({
-  environment: { commandMode: "view" },
+  environment: { entryPointMode: "view" },
   showHUD: vi.fn(),
   open: vi.fn(),
   openExtensionPreferences: vi.fn(),
@@ -29,7 +29,7 @@ function toastOf(error: unknown, organizationSlug?: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  raycast.environment.commandMode = "view";
+  raycast.environment.entryPointMode = "view";
 });
 
 describe("showApiFailure", () => {
@@ -90,7 +90,7 @@ describe("showApiFailure", () => {
   });
 
   test("the menu bar shows a HUD, having no window for a toast", async () => {
-    raycast.environment.commandMode = "menu-bar";
+    raycast.environment.entryPointMode = "menu-bar";
     await showApiFailure(new ApiError(403, "FORBIDDEN", "API key is read-only.", "POST"), { title });
     expect(raycast.showHUD).toHaveBeenCalledWith("Couldn't start timer: API key is read-only.");
     expect(raycast.showFailureToast).not.toHaveBeenCalled();

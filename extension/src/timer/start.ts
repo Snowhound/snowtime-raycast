@@ -13,7 +13,7 @@ import { cacheTimer, noteAnswer, noteFailure, refreshMenuBar } from "./cache";
 export async function startTimer(organization: Organization, timer: NewTimer) {
   // The menu bar has no window for a toast.
   const toast =
-    environment.commandMode === "menu-bar"
+    environment.entryPointMode === "menu-bar"
       ? undefined
       : await showToast({ style: Toast.Style.Animated, title: "Starting timer…" });
   try {
@@ -32,7 +32,7 @@ export async function startTimer(organization: Organization, timer: NewTimer) {
     return true;
   } catch (error) {
     // The menu bar keeps its own failures; another command shows them in its window.
-    if (environment.commandMode === "menu-bar") noteFailure(error);
+    if (environment.entryPointMode === "menu-bar") noteFailure(error);
     await toast?.hide();
     await showApiFailure(error, { title: "Couldn't start timer", organizationSlug: organization.slug });
     return false;
