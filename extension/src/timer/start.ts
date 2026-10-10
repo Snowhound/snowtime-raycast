@@ -5,7 +5,7 @@ import { newEntryId } from "../lib/ids";
 import { startedHud } from "../lib/names";
 import type { NewTimer } from "../lib/rows";
 import { rememberStart } from "../settings/organization";
-import { cacheTimer, refreshMenuBar } from "./cache";
+import { cacheTimer, noteAnswer, noteFailure, refreshMenuBar } from "./cache";
 
 // Starts a timer as a new entry, from any command: remembers its organization and project
 // for the next form, shows it in the menu bar, and closes Raycast with a HUD. A failure
@@ -23,6 +23,7 @@ export async function startTimer(organization: Organization, timer: NewTimer) {
       ticket: timer.ticket,
       projectId: timer.project?.id ?? null,
     });
+    noteAnswer();
     await rememberStart(organization.id, timer.project?.id ?? null);
     cacheTimer({ ...started, project: timer.project });
     await refreshMenuBar();
@@ -30,6 +31,8 @@ export async function startTimer(organization: Organization, timer: NewTimer) {
     await showHUD(startedHud(started, stopped), { clearRootSearch: true, popToRootType: PopToRootType.Immediate });
     return true;
   } catch (error) {
+    // The menu bar keeps its own failures; another command shows them in its window.
+    if (environment.commandMode === "menu-bar") noteFailure(error);
     await toast?.hide();
     await showApiFailure(error, { title: "Couldn't start timer", organizationSlug: organization.slug });
     return false;

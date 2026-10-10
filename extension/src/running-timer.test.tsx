@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 import type { LaunchProps } from "@raycast/api";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import type { RunningEntry } from "./api";
 import Command from "./running-timer";
 import { environment } from "./test/raycast-api";
 import { raycast, renderCommand, runAction, screen, settled, useCommandTest, waitFor, within } from "./test/render";
-import { projects } from "./test/snowtime";
+import { NOW, orgs, projects } from "./test/snowtime";
+import { startTimer } from "./timer/start";
 
 const snowtime = useCommandTest({ name: "running-timer", mode: "menu-bar" });
 
@@ -192,5 +193,100 @@ describe("a failed read", () => {
     expect(screen.getByText("Can't reach snowtime.example.com")).toBeDefined();
     expect(screen.getByText("Showing the last known timer.")).toBeDefined();
     expect(menu().dataset.title).toBe("1:37");
+  });
+});
+
+describe("a kept failure", () => {
+  // The timer is read at 10:37, and Refresh at 10:42 gets no answer.
+  async function failRefreshAfterARead() {
+    vi.setSystemTime(new Date(NOW.getTime() - 5 * 60_000));
+    snowtime().seedWeek();
+    const first = await run();
+    first.unmount();
+    vi.setSystemTime(NOW);
+    const view = await run();
+    snowtime().answerNext("offline");
+    snowtime().answerNext("offline");
+    await runAction(menu(), "Refresh");
+    await settled();
+    view.unmount();
+  }
+
+  test("shows when the menu opens again, with the time of the last read", async () => {
+    await failRefreshAfterARead();
+    const calls = snowtime().calls().length;
+    await run();
+    expect(lines().slice(0, 2)).toEqual(["Can't reach snowtime.example.com", "Showing the timer as of 10:37 AM."]);
+    expect(menu().dataset.title).toBe("1:37");
+    // Opening the menu still sends nothing.
+    expect(snowtime().calls().length).toBe(calls);
+  });
+
+  test("shows in background runs between reads", async () => {
+    await failRefreshAfterARead();
+    await run({ background: true });
+    expect(lines()[0]).toBe("Can't reach snowtime.example.com");
+  });
+
+  test("goes away with the next answer", async () => {
+    await failRefreshAfterARead();
+    const view = await run();
+    await runAction(menu(), "Refresh");
+    await settled();
+    view.unmount();
+    await run();
+    expect(lines()[0]).toBe("Landing page hero");
+  });
+
+  test("goes away when another command starts a timer", async () => {
+    await failRefreshAfterARead();
+    environment.commandMode = "view";
+    await startTimer(orgs.northwind, { description: "Budget review", ticket: null, project: null });
+    environment.commandMode = "menu-bar";
+    await run();
+    expect(lines()[0]).toBe("Budget review");
+  });
+
+  test("isn't made by another command's failure, which shows in its own window", async () => {
+    snowtime().seedWeek();
+    environment.commandMode = "view";
+    snowtime().answerNext("offline");
+    snowtime().answerNext("offline");
+    await startTimer(orgs.northwind, { description: "Budget review", ticket: null, project: null });
+    environment.commandMode = "menu-bar";
+    await run();
+    expect(lines()[0]).toBe("Landing page hero");
+  });
+
+  test("is made by the menu's own failed Stop Timer", async () => {
+    snowtime().seedWeek();
+    const view = await run();
+    snowtime().answerNext("offline", /stop$/);
+    await runAction(menu(), "Stop Timer");
+    await settled();
+    view.unmount();
+    await run();
+    expect(lines()[0]).toBe("Can't reach snowtime.example.com");
+  });
+});
+
+describe("the error line", () => {
+  test("tries again when clicked, and the menu shows the answer", async () => {
+    snowtime().seedWeek();
+    snowtime().answerNext("offline");
+    snowtime().answerNext("offline");
+    await run();
+    expect(lines()[0]).toBe("Can't reach snowtime.example.com");
+    const line = within(menu()).getByRole("button", { name: "Can't reach snowtime.example.com" });
+    await runAction(menu(), line.textContent ?? "");
+    await settled();
+    expect(lines()[0]).toBe("Landing page hero");
+  });
+
+  test("opens the preferences for an invalid key", async () => {
+    raycast.preferences.apiKey = "snow_wrong";
+    await run();
+    await runAction(menu(), "Invalid API key");
+    expect(raycast.preferencesOpened).toBe(1);
   });
 });

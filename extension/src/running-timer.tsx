@@ -22,7 +22,16 @@ import { formatDuration, formatTime } from "./lib/format";
 import { menuError, startAgainFrom } from "./lib/menu";
 import { entryLabel } from "./lib/names";
 import { timerOf, type EntryRow } from "./lib/rows";
-import { cachedTimer, cacheTimer, countBackgroundRun, type MenuBarContext } from "./timer/cache";
+import {
+  cachedTimer,
+  cacheTimer,
+  countBackgroundRun,
+  lastAnswerAt,
+  noteAnswer,
+  noteFailure,
+  savedFailure,
+  type MenuBarContext,
+} from "./timer/cache";
 import { startTimer } from "./timer/start";
 import { stopTimer } from "./timer/stop";
 
@@ -40,11 +49,27 @@ function readsApi(background: boolean, fromCache: boolean) {
   return background && !fromCache && countBackgroundRun();
 }
 
+// The Start Again entries, saving a failure as `readTimer` does.
+async function readRecent() {
+  try {
+    return await loadRecent(undefined, DAYS);
+  } catch (error) {
+    noteFailure(error);
+    throw error;
+  }
+}
+
 async function readTimer(fromApi: boolean) {
   if (!fromApi) return cachedTimer() ?? null;
-  const timer = await api().timer();
-  cacheTimer(timer);
-  return timer;
+  try {
+    const timer = await api().timer();
+    cacheTimer(timer);
+    noteAnswer();
+    return timer;
+  } catch (error) {
+    noteFailure(error);
+    throw error;
+  }
 }
 
 export default function Command(props: LaunchProps<{ launchContext: MenuBarContext }>) {
@@ -58,10 +83,7 @@ export default function Command(props: LaunchProps<{ launchContext: MenuBarConte
 
   const timer = usePromise(readTimer, [fromApi], { onError: () => undefined });
   // The Start Again section's entries, read with the timer; the other runs keep the last ones.
-  const recent = useCachedPromise(() => loadRecent(undefined, DAYS), [], {
-    execute: fromApi && showStartAgain,
-    onError: () => undefined,
-  });
+  const recent = useCachedPromise(readRecent, [], { execute: fromApi && showStartAgain, onError: () => undefined });
 
   // The timer after an action in this menu, which the menu shows itself: the refresh Start
   // and Stop ask for can't reach the command that is running.
@@ -74,7 +96,10 @@ export default function Command(props: LaunchProps<{ launchContext: MenuBarConte
   const running: RunningEntry | null =
     changed !== undefined ? changed : timer.data !== undefined ? timer.data : (cachedTimer() ?? null);
 
-  const error = timer.error ?? recent.error;
+  // The last failed read, from this run or an earlier one, until the API answers again. Every
+  // read saves its failure before it throws, so the cache is the one place to look, and an
+  // answer since, such as the error line's retry, clears it.
+  const error = savedFailure();
   const organizations = recent.data?.organizations ?? [];
   const slug = organizations.find((org) => org.id === running?.organizationId)?.slug ?? recent.data?.organization?.slug;
   const startAgain =
@@ -98,7 +123,9 @@ export default function Command(props: LaunchProps<{ launchContext: MenuBarConte
     try {
       const [latest] = await Promise.all([api().timer(), showStartAgain ? recent.revalidate() : undefined]);
       cacheTimer(latest);
+      noteAnswer();
     } catch (error) {
+      noteFailure(error);
       await showApiFailure(error, { title: "Couldn't refresh" });
     }
   }
@@ -121,7 +148,8 @@ export default function Command(props: LaunchProps<{ launchContext: MenuBarConte
     </MenuBarExtra.Section>
   );
 
-  const failure = error && menuError(error, hostOf(instanceUrl), !!running);
+  const failure =
+    error && menuError(error, hostOf(instanceUrl), { hasCachedTimer: !!running, answeredAt: lastAnswerAt() });
 
   return (
     <MenuBarExtra
@@ -133,10 +161,12 @@ export default function Command(props: LaunchProps<{ launchContext: MenuBarConte
       {failure ? (
         <>
           <MenuBarExtra.Section>
+            {/* Clickable, so Raycast draws it as an item rather than greyed out: it runs the fix. */}
             <MenuBarExtra.Item
               title={failure.title}
-              tooltip={failure.title}
+              tooltip={failure.fix === "preferences" ? "Open the extension's preferences" : "Try again"}
               icon={{ source: Icon.Warning, tintColor: Color.Red }}
+              onAction={() => (failure.fix === "preferences" ? openExtensionPreferences() : act(refresh))}
             />
             <MenuBarExtra.Item title={failure.detail} />
           </MenuBarExtra.Section>

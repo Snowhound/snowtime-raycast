@@ -1,8 +1,8 @@
-import { PopToRootType, showHUD } from "@raycast/api";
+import { environment, PopToRootType, showHUD } from "@raycast/api";
 import { api, isApiError, type RunningEntry } from "../api";
 import { showApiFailure } from "../components/failure-toast";
 import { stoppedHud } from "../lib/names";
-import { cachedTimer, cacheTimer, refreshMenuBar } from "./cache";
+import { cachedTimer, cacheTimer, noteAnswer, noteFailure, refreshMenuBar } from "./cache";
 
 // Stops the running timer, from any command: `running` when the caller knows it, else the
 // timer the API says runs. It stops that entry by its id, so a timer started since in the
@@ -17,23 +17,28 @@ export async function stopTimer(running?: RunningEntry) {
   try {
     timer ??= await client.timer();
     if (!timer) {
+      noteAnswer();
       await update(null);
       await hud("No timer is running");
       return false;
     }
     try {
       const stopped = await client.stopTimer(timer.id);
+      noteAnswer();
       await update(null);
       await hud(stoppedHud(stopped));
       return true;
     } catch (error) {
       // 404: the entry isn't the running timer any more; show whatever runs now.
       if (!isApiError(error) || error.status !== 404) throw error;
+      noteAnswer();
       await update(await client.timer());
       await hud("The timer already stopped");
       return false;
     }
   } catch (error) {
+    // The menu bar keeps its own failures; another command shows them in its window.
+    if (environment.commandMode === "menu-bar") noteFailure(error);
     if (before) await update(before);
     await showApiFailure(error, { title: "Couldn't stop timer", organizationSlug: await slugOf(timer) });
     return false;
