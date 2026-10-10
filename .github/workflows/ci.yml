@@ -30,7 +30,12 @@ jobs:
           cache: npm
           cache-dependency-path: extension/package-lock.json
       - run: npm ci
+      # `ray lint` checks that the owner, the snowhound Raycast organization, exists. The
+      # organization isn't visible without signing in, so the lint signs in with a Raycast
+      # token (docs/development.md, "Continuous integration").
       - run: npm run lint
+        env:
+          RAY_TOKEN: ${{ secrets.RAY_TOKEN }}
       # The distribution build type-checks, and writes raycast-env.d.ts, the types the tests'
       # type-check needs.
       - run: npm run build

@@ -37,11 +37,18 @@ the local Snowtime. The prototypes are checked by agents first
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs `npm ci`, `npm run lint`, `npm run build`, and `npm test` in
-`extension/` on Node 22, for every push to `main` and every pull request. The build comes
-before the tests: it writes `raycast-env.d.ts`, the generated types of the preferences and
-arguments, which git ignores and the tests' type-check needs. `ray build` without `-e dist`
-skips the type-check, so `npm run build` passes `-e dist`.
+`.github/workflows/ci.yml` runs `npm ci`, `npm run lint`, `npm run build`, and `npm test`
+in `extension/` on Node 22, for every push to `main` and every pull request. The build
+comes before the tests: it writes `raycast-env.d.ts`, the generated types of the
+preferences and arguments, which git ignores and the tests' type-check needs. `ray build`
+without `-e dist` skips the type-check, so `npm run build` passes `-e dist`.
+
+`ray lint` checks with Raycast's API that `owner`, the snowhound organization, exists, and
+the organization isn't visible without signing in. The lint step therefore signs in with
+the repository secret `RAY_TOKEN`, a Raycast access token that the Raycast CLI reads from
+the environment. It is a personal token of the maintainer who set it, from
+`npx ray token`; when it stops working, the lint fails with `Invalid owner "snowhound"`,
+and someone with access to the organization sets it again (decided 2026-10-10).
 
 ## Scripts
 
