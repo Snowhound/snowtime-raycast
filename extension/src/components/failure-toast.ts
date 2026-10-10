@@ -14,7 +14,7 @@ interface Options {
 // the API's message, with the action that fixes it. The menu bar has no window for a toast,
 // so there it is a HUD.
 export async function showApiFailure(error: unknown, { title, organizationSlug }: Options): Promise<void> {
-  if (environment.commandMode === "menu-bar") {
+  if (environment.entryPointMode === "menu-bar") {
     const message = error instanceof ApiError ? messageOf(error) : error instanceof Error ? error.message : "";
     await showHUD(message ? `${title}: ${message}` : title);
     return;

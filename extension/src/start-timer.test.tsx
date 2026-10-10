@@ -58,6 +58,17 @@ describe("suggestions", () => {
     expect(rowTitles()).toContain("Old footer");
   });
 
+  test("name an entry without a description by its ticket, which also shows as its tag", async () => {
+    snowtime().entry({
+      ticket: "TASK-123",
+      projectId: projects.website.id,
+      startedAt: at(0, 10),
+      stoppedAt: at(0, 10, 30),
+    });
+    await open();
+    expect((await findRow("TASK-123")).dataset.accessories).toBe("TASK-123 | 10:00 AM");
+  });
+
   test("show the running entry's elapsed time", async () => {
     snowtime().seedWeek();
     await open();

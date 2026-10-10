@@ -248,20 +248,20 @@ describe("a kept failure", () => {
 
   test("goes away when another command starts a timer", async () => {
     await failRefreshAfterARead();
-    environment.commandMode = "view";
+    environment.entryPointMode = "view";
     await startTimer(orgs.northwind, { description: "Budget review", ticket: null, project: null });
-    environment.commandMode = "menu-bar";
+    environment.entryPointMode = "menu-bar";
     await run();
     expect(lines()[0]).toBe("Budget review");
   });
 
   test("isn't made by another command's failure, which shows in its own window", async () => {
     snowtime().seedWeek();
-    environment.commandMode = "view";
+    environment.entryPointMode = "view";
     snowtime().answerNext("offline");
     snowtime().answerNext("offline");
     await startTimer(orgs.northwind, { description: "Budget review", ticket: null, project: null });
-    environment.commandMode = "menu-bar";
+    environment.entryPointMode = "menu-bar";
     await run();
     expect(lines()[0]).toBe("Landing page hero");
   });

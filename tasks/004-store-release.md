@@ -11,17 +11,24 @@ while.
 
 - [x] `extension/README.md` explains what the extension does, how to create an API key
       and which scope each command needs, and how to point it at a self-hosted instance
-- [ ] `extension/metadata/` holds three to six 2000 × 1250 PNG screenshots of the
+- [x] `extension/metadata/` holds three to six 2000 × 1250 PNG screenshots of the
       commands with fictional data, all in one theme
 - [x] `extension/CHANGELOG.md` lists the first version under
       `## [Initial Version] - {PR_MERGE_DATE}`
-- [ ] `extension/package.json` has the final title, description, keywords, and
-      categories, and the latest `@raycast/api`, with `react-dom` at the React version it
-      brings
+- [x] `extension/package.json` has the final title, description, keywords, and
+      categories
+- [x] `extension/help.md` explains the setup beside Raycast's preferences form, and the
+      README opens with the icon
+- [x] `@raycast/api` is the latest, 2.7.3, and `react-dom` stays at the React version it
+      brings, 19.0.0; the code uses `environment.entryPointName` and `entryPointMode`
+      instead of the names Raycast 2.0 deprecated
 - [x] The extension sits in `extension/`, so `npm run publish` leaves the docs, tasks,
       prototypes, and agent files out of `raycast/extensions`
-- [ ] `npm run build` and `npm run lint` pass
+- [x] `npm run build` and `npm run lint` pass, also in CI on every push
 - [x] The repository is moved to the Snowhound organization, and Snowtime's `docs/api.md`
       links to it
 - [ ] `npm run publish` opens the pull request to `raycast/extensions`, and its review is
       answered until it merges
+- [ ] That pull request adds `snowtime` to `.github/public_raycast_extensions.txt` and
+      says why, since `raycast/extensions` fails an extension with an `owner` that isn't on
+      the list (`docs/architecture/README.md`, "Raycast Store rules")

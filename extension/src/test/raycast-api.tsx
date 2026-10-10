@@ -47,8 +47,15 @@ export const raycast = {
 };
 
 export const environment = {
-  commandName: "",
-  commandMode: "view" as "view" | "no-view" | "menu-bar",
+  entryPointName: "",
+  entryPointMode: "view" as "view" | "no-view" | "menu-bar",
+  // The names before Raycast 2.0, which @raycast/utils still reads.
+  get commandName() {
+    return this.entryPointName;
+  },
+  get commandMode() {
+    return this.entryPointMode;
+  },
   launchType: "userInitiated",
   appearance: "dark",
   extensionName: "snowtime",
@@ -72,7 +79,7 @@ export function resetRaycast(preferences: Record<string, unknown> = {}) {
   raycast.running = [];
   raycast.localStorage.clear();
   raycast.cache.clear();
-  Object.assign(environment, { commandName: "", commandMode: "view", launchType: "userInitiated" });
+  Object.assign(environment, { entryPointName: "", entryPointMode: "view", launchType: "userInitiated" });
 }
 
 // Enums and names. Icons and colors are their names, which is all a test needs.

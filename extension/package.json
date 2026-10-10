@@ -2,7 +2,14 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "snowtime",
   "title": "Snowtime",
-  "description": "Start and stop your Snowtime timer.",
+  "description": "Control your Snowtime timer, browse entries, and see the running time.",
+  "keywords": [
+    "time tracking",
+    "time tracker",
+    "timer",
+    "timesheet",
+    "snowhound"
+  ],
   "icon": "extension-icon.png",
   "author": "kustav_prants",
   "owner": "snowhound",
@@ -141,7 +148,7 @@
     }
   ],
   "dependencies": {
-    "@raycast/api": "^2.6.2",
+    "@raycast/api": "^2.7.3",
     "@raycast/utils": "^2.3.2",
     "uuid": "^14.0.2"
   },

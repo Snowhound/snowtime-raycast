@@ -184,7 +184,8 @@ function EntryItem({
       title={entryLabel(group[0].entry)}
       subtitle={group[0].project?.name ?? (group[0].entry.projectId ? "Archived project" : "No project")}
       accessories={[
-        ...(group[0].entry.description && group[0].entry.ticket ? [{ tag: group[0].entry.ticket }] : []),
+        // Also when the ticket names the entry, so every row's ticket is a tag in one place.
+        ...(group[0].entry.ticket ? [{ tag: group[0].entry.ticket }] : []),
         ...(isRunning ? [{ tag: { value: "Running", color: Color.Orange } }] : []),
         ...(group.length > 1
           ? [{ text: String(group.length), icon: Icon.List, tooltip: `${group.length} entries` }]

@@ -28,8 +28,8 @@ export function useCommandTest(command: { name: string; mode?: "view" | "no-view
     resetRaycast({ ...preferences });
     // The user works in Northwind, as the prototypes show; Harbor sorts first.
     raycast.localStorage.set("organizationId", orgs.northwind.id);
-    environment.commandName = command.name;
-    environment.commandMode = command.mode ?? "view";
+    environment.entryPointName = command.name;
+    environment.entryPointMode = command.mode ?? "view";
     current.snowtime = createSnowtime();
     vi.stubGlobal("fetch", current.snowtime.fetch);
   });
