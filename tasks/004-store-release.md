@@ -15,8 +15,10 @@ while.
       commands with fictional data, all in one theme
 - [x] `extension/CHANGELOG.md` lists the first version under
       `## [Initial Version] - {PR_MERGE_DATE}`
-- [ ] `extension/package.json` has the final title, description, keywords, and
+- [x] `extension/package.json` has the final title, description, keywords, and
       categories
+- [x] `extension/help.md` explains the setup beside Raycast's preferences form, and the
+      README opens with the icon
 - [x] `@raycast/api` is the latest, 2.7.3, and `react-dom` stays at the React version it
       brings, 19.0.0; the code uses `environment.entryPointName` and `entryPointMode`
       instead of the names Raycast 2.0 deprecated

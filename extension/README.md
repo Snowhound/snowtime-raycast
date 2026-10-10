@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/extension-icon@dark.png" />
+    <img src="./assets/extension-icon.png" alt="Snowtime" width="150" height="150" />
+  </picture>
+</p>
+
 # Snowtime
 
 Start, stop, and watch your [Snowtime](https://snowtime.snowhound.eu) timer from Raycast,

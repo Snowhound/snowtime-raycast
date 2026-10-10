@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "snowtime",
   "title": "Snowtime",
-  "description": "Start and stop your Snowtime timer.",
+  "description": "Start, stop, and continue your Snowtime timer, browse recent entries, and see the running time in the menu bar.",
   "keywords": [
     "time tracking",
     "time tracker",
