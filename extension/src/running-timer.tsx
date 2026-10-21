@@ -39,11 +39,12 @@ import { stopTimer } from "./timer/stop";
 // start another (docs/architecture/README.md, "The menu bar").
 
 const DAYS = 14;
-// The mark, tinted in the menu bar's text color. With a kept failure, the same mark with an
-// exclamation badge, so the failure shows with the menu closed. Both are one color, as the
-// tint colors every pixel; an untinted icon can't follow the menu bar's color.
-const ICON = { source: "menu-bar-icon.png", tintColor: Color.PrimaryText };
-const ERROR_ICON = { source: "menu-bar-icon-error.png", tintColor: Color.PrimaryText };
+// The mark, and with a kept failure the same mark with an exclamation badge, so the failure
+// shows with the menu closed. Both are one-color PNGs named without an extension: Raycast
+// draws an untinted icon whose name has no "." or "/" as a template image, which macOS colors
+// for each screen's menu bar (docs/architecture/README.md, "The menu bar").
+const ICON = "menu-bar-mark";
+const ERROR_ICON = "menu-bar-mark-error";
 
 // Whether this run reads the API: every fifth background run, and any run before anything
 // is cached. Opening the menu and the other commands' refreshes show the cache, so opening

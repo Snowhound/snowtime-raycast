@@ -225,7 +225,7 @@ describe("a kept failure", () => {
   test("puts a badge on the menu bar's mark, and the title stays the elapsed time", async () => {
     await failRefreshAfterARead();
     await run();
-    expect(menu().dataset.icon).toBe("menu-bar-icon-error.png");
+    expect(menu().dataset.icon).toBe("menu-bar-mark-error");
     expect(menu().dataset.title).toBe("1:37");
   });
 
@@ -243,7 +243,7 @@ describe("a kept failure", () => {
     view.unmount();
     await run();
     expect(lines()[0]).toBe("Landing page hero");
-    expect(menu().dataset.icon).toBe("menu-bar-icon.png");
+    expect(menu().dataset.icon).toBe("menu-bar-mark");
   });
 
   test("goes away when another command starts a timer", async () => {

@@ -120,7 +120,7 @@
           "The title is the elapsed time as h:mm, counted on the Mac and moved once a minute; with no timer running, the icon stands alone.",
           "The icon is a template image, so macOS tints it to match the menu bar. Hover the item for the description.",
           "⌘1–⌘5 start a recent entry again while the menu is open; the command's Show Start Again preference hides that section. Lines without an action are information only.",
-          "A failed read stays in the menu until the API answers again (task 010): reopening the menu, or a background run between reads, shows the same lines, with the time of the last successful read. The error line runs its fix: it tries again, as Refresh does, or for an invalid key opens the extension's preferences. While a failure is kept, the menu bar's mark carries an exclamation badge, so it shows with the menu closed; the title stays the elapsed time. The icon is one color, tinted like the normal one, so it follows the menu bar.",
+          "A failed read stays in the menu until the API answers again (task 010): reopening the menu, or a background run between reads, shows the same lines, with the time of the last successful read. The error line runs its fix: it tries again, as Refresh does, or for an invalid key opens the extension's preferences. While a failure is kept, the menu bar's mark carries an exclamation badge, so it shows with the menu closed; the title stays the elapsed time. The icon is one color, a template image like the normal one, so it follows the menu bar.",
         ],
         states: {
           "Running, menu closed": () => bar({ open: false }),

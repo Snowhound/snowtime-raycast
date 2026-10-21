@@ -186,14 +186,20 @@ vanish at the next open, and the menu would show an old timer as if nothing fail
 - The error line has an action, so Raycast draws it as an item rather than greyed out like
   the lines without one: it opens the extension's preferences for an invalid key, and
   otherwise tries again, as Refresh does.
-- While a failure is kept, the menu bar shows `assets/menu-bar-icon-error.png`, the mark of
-  `menu-bar-icon.png` with a badge in its bottom-right corner, an exclamation mark cut out
-  of a disc, so the failure shows with the menu closed. The title stays the elapsed time.
-  Like the normal icon, it is one color and tinted with `Color.PrimaryText`, so it follows
-  the menu bar's color. A red badge was rejected: a tint colors every pixel, so a red badge
-  needs an untinted icon, and an untinted icon can't follow the menu bar. Raycast picks an
-  `@dark` image by its own appearance, which showed a black mark on a dark bar, and a single
-  black or grey mark didn't look right.
+- While a failure is kept, the menu bar shows `assets/menu-bar-mark-error`, the mark of
+  `menu-bar-mark` with a badge in its bottom-right corner, an exclamation mark cut out of a
+  disc, so the failure shows with the menu closed. The title stays the elapsed time.
+- Both icons are one-color PNGs, named without a file extension and passed untinted
+  (decided 2026-10-21). Raycast draws an untinted icon as a template image only when its
+  name has no `.` or `/`, which built-in icons meet and asset file names normally don't.
+  macOS then colors the mark for each screen's menu bar, as it does the title. Raycast
+  doesn't document this: its backend sets `hasTintColor` from the name, and the renderer
+  still finds the file in `assets/` and decodes the PNG from its contents. If a Raycast
+  update breaks it, the icon shows black, or not at all.
+- A `Color.PrimaryText` tint was rejected: Raycast resolves it to one color from the focused
+  screen's menu bar, so a screen with a different background got the wrong color. An SVG
+  can't work without its `.svg` extension, because Raycast only decodes an SVG with that
+  extension or MIME type. A red badge was rejected because a template image is one color.
 
 ## Starting and continuing
 
