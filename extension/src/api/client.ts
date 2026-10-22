@@ -101,9 +101,10 @@ export function createClient(config: ClientConfig, fetchFn: typeof fetch = fetch
 
 export type Client = ReturnType<typeof createClient>;
 
-// The API answers `{ "error": { "code", "key" } }` for a refusal of its rules, and
+// The API answers `{ "error": { "code", "key" } }` for a refusal of its rules,
+// `{ "error": { "key", "params"?, "message" } }` for input that fails validation, and
 // `{ "error": { "code"?, "message" } }` otherwise; a proxy in between may answer anything,
-// so a body without either still becomes an ApiError.
+// so a body without any of them still becomes an ApiError.
 function failure(response: Response, data: unknown, method: string) {
   const error = (data as { error?: { code?: unknown; key?: unknown; message?: unknown } } | null)?.error;
   const code = typeof error?.code === "string" ? error.code : `HTTP_${response.status}`;

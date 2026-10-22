@@ -151,8 +151,8 @@ describe("actions", () => {
     expect(snowtime().running()).toBeNull();
     expect(menu().dataset.title).toBe("");
     expect(raycast.huds).toEqual(["Stopped “Landing page hero” at 1:37"]);
-    // The menu shows the change itself: a command can't launch itself.
-    expect(raycast.launched).toEqual([]);
+    // Then reruns from the cache, in case Raycast unloaded the run before its last render.
+    expect(raycast.launched).toEqual([{ name: "running-timer", type: "background", context: { fromCache: true } }]);
   });
 
   test("Start Again starts the entry and the menu shows it", async () => {

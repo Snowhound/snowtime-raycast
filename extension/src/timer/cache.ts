@@ -77,6 +77,18 @@ export interface MenuBarContext {
 // ("Worker exited"), and the open menu updates its own state.
 export async function refreshMenuBar() {
   if (environment.entryPointName === MENU_BAR) return;
+  await launchMenuBar();
+}
+
+// Reruns the menu bar once an action in its menu is done. The action's run draws the result
+// as it turns `isLoading` off, and Raycast can unload the command before that last render
+// reaches the menu bar; the new run draws it from the cache. Launching the running command
+// replaces it, which cuts nothing off once the action is done.
+export async function redrawMenuBar() {
+  await launchMenuBar();
+}
+
+async function launchMenuBar() {
   const context: MenuBarContext = { fromCache: true };
   try {
     await launchCommand({ name: MENU_BAR, type: LaunchType.Background, context });

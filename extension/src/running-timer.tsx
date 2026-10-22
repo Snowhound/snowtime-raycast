@@ -29,6 +29,7 @@ import {
   lastAnswerAt,
   noteAnswer,
   noteFailure,
+  redrawMenuBar,
   savedFailure,
   type MenuBarContext,
 } from "./timer/cache";
@@ -120,6 +121,7 @@ export default function Command(props: LaunchProps<{ launchContext: MenuBarConte
     } finally {
       setChanged(cachedTimer() ?? null);
       setBusy(false);
+      await redrawMenuBar();
     }
   }
 

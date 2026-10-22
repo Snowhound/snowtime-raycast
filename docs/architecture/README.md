@@ -146,9 +146,12 @@ task 082, README point 4). Instead:
   cache without reading the API: a read before the stop finished would bring the timer back.
 - The menu's Start Again, Stop Timer, and Refresh run in the menu's own run and keep
   `isLoading` true until they finish, so Raycast doesn't unload the command when the click
-  closes the menu. The menu shows the result itself: a command can't launch itself, so the
-  refresh Start and Stop ask for doesn't reach it. In the menu bar, failures show as a HUD,
-  since there is no window for a toast.
+  closes the menu. The menu shows the result itself: launching the running command replaces
+  it, so the refresh Start and Stop ask for would cut the action off. Once the action is
+  done, the menu bar launches itself in the background with `fromCache` (decided
+  2026-10-22): Raycast sometimes unloaded the command before its last render, the one that
+  turns `isLoading` off, reached the menu bar, which kept the old title until the menu was
+  opened. In the menu bar, failures show as a HUD, since there is no window for a toast.
 - A background run reads the cache and counts the elapsed time; every fifth run reads the
   timer and the Start Again entries from the API instead. A run reads the API too when
   nothing is cached yet.
